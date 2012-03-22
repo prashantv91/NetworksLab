@@ -26,6 +26,7 @@ class Player
     int get_id() const;
     char get_char() const;
     Position get_pos() const;
+    void set_pos(const Position& pos);
     void move(direction dir);
     
 

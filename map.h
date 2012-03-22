@@ -38,8 +38,8 @@ class Map
     bool move(Player* player, direction dir);
     void print_map();
     void draw_map();
-    void place_player(Player pl, Position pos);
-    void place_player_random(Player pl);
+    void place_player(Player* pl, Position pos);
+    void place_player_random(Player* pl);
 
 };
 

@@ -2,7 +2,7 @@
  * player.cpp - Implements the Player class.
  */
 
-#include "player.cpp"
+#include "player.h"
 
 /* Constructors */
 
@@ -37,6 +37,9 @@ Player::Player(const Player& P)
     player_pos.y = P.player_pos.y;
 }
 
+Player::~Player()
+{
+}
 
 /* Functions */
 
@@ -55,7 +58,12 @@ Position Player::get_pos() const
     return player_pos;
 }
 
-void move(direction dir)
+void Player::set_pos(const Position& pos)
+{
+    player_pos = pos;
+}
+
+void Player::move(direction dir)
 {
     player_pos.move(dir);
 }

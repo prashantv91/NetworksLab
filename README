@@ -1,0 +1,17 @@
+(First entry 22.3.2012 7:25 pm)
+(Last update 22.3.2012 7:25 pm)
+
+
+Multiplayer game for Networks Lab project.
+
+Name of game? 
+Ideas: GuruPI, 
+
+A maze game with rules that may be found here soon.
+
+As of now, some basic classes such as Map and Player implemented. 
+make and run test.out to see awesomeness.
+Allegro keyboard input s\not currently being used as it does not seem to work in text mode.
+
+Need to make reading map from file better.
+

@@ -3,9 +3,12 @@
  */
 
 #include "map.h"
+#include "position.h"
+#include "player.h"
 #include <cstdlib>
 #include <cstdio>
 #include <iostream>
+#include <fstream>
 #include <cctype>
 using namespace std;
 
@@ -53,19 +56,27 @@ Map::Map(char filename[])
 
     while (!f.eof())
     {
-        ch = f.getch();
+        ch = f.get();
+        if (isspace(ch))
+            continue;
+        
+        /*
         if (ch =='\n')
         {
+            cout<<'n';
             x++;
             y = 0;
 
-            if (x >= MAP_MAXX)
-                break;
+            if (x >= MAP_MAXX){cout<<"XX";
+                break;}
 
+            continue;
+           
             while (isspace(ch))
-                ch = f.getch();
+                ch = f.get();
+                
         }
-        
+        */
         temp_map[x][y] = ch;
         y++;
         if (y >= MAP_MAXY)
@@ -74,11 +85,11 @@ Map::Map(char filename[])
             y = 0;
         }
         if (x >= MAP_MAXX)
-            break;       
+            break;
 
     }
 
-    if (map_check(temp_map))
+    if (check_map(temp_map))
     {
         REP(i, MAP_MAXX)
             REP(j, MAP_MAXY)
@@ -87,6 +98,12 @@ Map::Map(char filename[])
     else
     {
         fprintf(stderr, "Map::Map(filename[]): Invalid map file. Loading blank map.\n");
+        REP(x, MAP_MAXX)
+            REP(y, MAP_MAXY)
+            {
+                map_original[x][y] = MAP_plain;
+                map[x][y] = MAP_plain;
+            }
     }
 
 }
@@ -109,7 +126,7 @@ bool Map::safe(Position pos)
     return true;
 }
 
-bool map_check(char m[MAP_MAXX][MAP_MAXY])
+bool Map::check_map(char m[MAP_MAXX][MAP_MAXY])
 {
     REP(x, MAP_MAXX)
         REP(y, MAP_MAXY)
@@ -123,7 +140,6 @@ bool Map::move(Player* player, direction dir)
 {
     Position pos = player->get_pos(), new_pos;
     char pl_char = player->get_char();
-    direction dir;
 
     if (map[pos.x][pos.y] != pl_char)          //If player object is lying about its position, abort.
         return false;
@@ -135,6 +151,7 @@ bool Map::move(Player* player, direction dir)
 
     map[pos.x][pos.y] = map_original[pos.x][pos.y];
     map[new_pos.x][new_pos.y] = pl_char;
+    player->move(dir);
 
     return true;
 }
@@ -163,8 +180,8 @@ void Map::place_player(Player* pl, Position pos)
         return;
     }
 
-    map[pos.x][pos.y] = pl->player_char;
-    pl->player_pos = pos;
+    map[pos.x][pos.y] = pl->get_char();
+    pl->set_pos(pos);
 
 }
 
@@ -175,8 +192,8 @@ void Map::place_player_random(Player* pl)
 
     while (1)
     {
-        pos.x = rendom()%MAP_MAXX;
-        pos.y = rendom()%MAP_MAXY;
+        pos.x = random()%MAP_MAXX;
+        pos.y = random()%MAP_MAXY;
         if (safe(pos))
             break;
         give_up_count--;
