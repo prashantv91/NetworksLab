@@ -15,7 +15,7 @@ test: $(OBJS) test.o
 	$(CPP) $(OBJS) test.o $(ALLEGROFLAGS) -o test.out
 
 %.o: %.cpp
-	$(CPP) -c $^ -o $@
+	$(CPP) $(ALLEGROFLAGS) -c $^ -o $@
 
 .PHONY: clean
 

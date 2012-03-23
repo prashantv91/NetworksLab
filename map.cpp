@@ -10,6 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <cctype>
+#include <allegro.h>
 using namespace std;
 
 /* Constructors */
@@ -158,13 +159,24 @@ bool Map::move(Player* player, direction dir)
 
 void Map::print_map()
 {
-    REP(x, MAP_MAXX)
+    if (false)//(get_gfx_mode() == GFX_TEXT)          //How to find current graphics mode?!
     {
-        REP(y, MAP_MAXY)
-            cout<<map[x][y];
+        REP(x, MAP_MAXX)
+        {
+            REP(y, MAP_MAXY)
+                cout<<map[x][y];
+            cout<<endl;
+        }
         cout<<endl;
     }
-    cout<<endl;
+    else
+    {
+        rectfill(screen, 0, 0, MAP_MAXY*10, MAP_MAXX*10, makecol(0,0,0) );
+        //clear_bitmap(screen);
+        REP(x, MAP_MAXX)
+            REP(y, MAP_MAXY)
+                textprintf_ex(screen, font, (y+1)*10, (x+1)*10, makecol(255, 100, 200), -1, "%c", map[x][y]);  //x and y interchanged due to differing conventions.
+    }
 }
 
 void Map::draw_map()

@@ -11,6 +11,9 @@
 #define RFOR(a, b, c)   for (int a = int(b)-1; a >= int(c); a--)
 #define REP(a, b)  for (int a = 0; a < int(b); a++)
 
+const int SCREEN_X = 640;
+const int SCREEN_Y = 480;
+
 const int MAP_MAXX = 10;
 const int MAP_MAXY = 10;
 

@@ -11,17 +11,26 @@ using namespace std;
 
 int main()
 {
-    //allegro_init();
-    //install_keyboard();
+    allegro_init();
+    install_keyboard();
 
     Map M("maps/map1");
     Player P;
     M.place_player_random(&P);
     //readkey();
     //while (keypressed);
+  
+    set_color_depth(32);
+  
+    if (set_gfx_mode(GFX_AUTODETECT, SCREEN_X, SCREEN_Y, 0, 0)) 
+    {
+        allegro_message("Video Error: %s.\n", allegro_error);
+        exit(1);
+    }
     M.print_map();
     
-    /*
+
+    
     while (1)
     {
         readkey();
@@ -40,7 +49,7 @@ int main()
             M.move(&P, RIGHT);
         M.print_map();
     }
-    */
+    
     /*
     M.move(&P, UP);
     M.print_map();
@@ -51,5 +60,8 @@ int main()
     M.move(&P, RIGHT);
     M.print_map();
     */
+
+
+
     return 0;   
 }
