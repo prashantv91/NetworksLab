@@ -7,7 +7,7 @@ CFLAGS = -Wall -pedantic $(DEBUG)
 LDFLAGS = 
 ALLEGROFLAGS = `allegro-config --cflags --libs`
 MACROS = 
-OBJS = position.o map.o player.o
+OBJS = position.o map.o player.o packet.o client.o
 
 all: test 
 

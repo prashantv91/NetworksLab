@@ -5,6 +5,7 @@
 #include "map.h"
 #include "position.h"
 #include "player.h"
+#include "client.h"
 #include <allegro.h>
 #include <iostream>
 using namespace std;
@@ -22,15 +23,16 @@ int main()
   
     set_color_depth(32);
   
-    if (set_gfx_mode(GFX_AUTODETECT, SCREEN_X, SCREEN_Y, 0, 0)) 
+    if (set_gfx_mode(GFX_AUTODETECT_WINDOWED, SCREEN_X, SCREEN_Y, 0, 0)) 
     {
         allegro_message("Video Error: %s.\n", allegro_error);
         exit(1);
     }
     M.print_map();
     
+    client_main();
 
-    
+    /*
     while (1)
     {
         readkey();
@@ -50,7 +52,7 @@ int main()
         M.print_map();
     }
     
-    /*
+    
     M.move(&P, UP);
     M.print_map();
     M.move(&P, LEFT);
