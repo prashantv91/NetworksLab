@@ -32,16 +32,21 @@ void keyboard(void *args)
 
 
     //while (GAME_RUNNING)
-    for (int i = 0 ; i < 20; i++)
+    //for (int i = 0 ; i < 20; i++)
+    while (1)
     {
         while (!keypressed());
         ch = readkey() % 256;
         if (ch > 0 && ch < 128)
         {
-            if (ch !='\n' && (chat_ind % PKT_MSG_SIZE != PKT_MSG_SIZE-1))
+            if (ch !='\n' && ch != '\r' && (chat_ind % PKT_MSG_SIZE != PKT_MSG_SIZE-1))
             {
                 s[chat_ind] = ch;
                 chat_ind++;
+#ifdef DEBUG
+                textprintf_ex(screen, font, chat_ind*8, 0, makecol(255, 100, 200), -1, "%c", ch);  //x and y interchanged due to differing conventions.
+                //cerr<<s<<endl;
+#endif
             }
             else
             {
@@ -49,9 +54,7 @@ void keyboard(void *args)
                 chat_ind++;
                 if (chat_ind == 10*PKT_MSG_SIZE)
                     chat_ind = 0;
-#ifdef DEBUG
-                cerr<<s<<endl;
-#endif
+                /**/break;
             }
 
         }
@@ -62,6 +65,7 @@ void keyboard(void *args)
 
 void client_main()
 {
+    Params params;
     GAME_RUNNING = true;
-    keyboard(NULL);
+    keyboard(&params);
 }
