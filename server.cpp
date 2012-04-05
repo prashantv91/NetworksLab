@@ -17,7 +17,7 @@ struct Params
 
 Game game; 
 Params chat_params[2*MAX_PLAYERS], game_params[2*MAX_PLAYERS]; 
-pthread_mutex_t chatLock;                                         // lock for sending chat messages
+pthread_mutex_t chatLock, gameLock;                               // locks for sending information to client
 
 int fds[2*MAX_PLAYERS]; 
 int backlog = 5*MAX_PLAYERS;                                      // number of pending connections
@@ -205,6 +205,8 @@ void send_ids()
             game.players[cnt].set_name(packet.message + 1); 
             printf("Server: %s has joined the game with character %c and id %d\n", game.players[cnt].get_name(), game.players[cnt].get_char(), game.players[cnt].get_id()); 
 
+            game.map.place_player_random(&game.players[cnt]); 
+
             packet.player_id = cnt; 
             packet.packet_type = TYPE_REPLY; 
 
@@ -226,6 +228,7 @@ void send_ids()
             chat_cnt++; 
         }
     }
+    game.map.print_map(); 
 }
 
 void *game_callback(void *args)
@@ -234,6 +237,7 @@ void *game_callback(void *args)
     Game *game; 
     Packet packet; 
     Params *params;
+    direction dir; 
 
     params = (Params *)(args);
     conn_fd = params -> conn_fd;
@@ -244,6 +248,32 @@ void *game_callback(void *args)
 
     packet.packet_type = TYPE_START;
     send(conn_fd, &packet, sizeof(packet), 0); 
+    
+    while(1)
+    {
+            if(recv(conn_fd, &packet, sizeof(packet), 0) <= 0)
+            {
+                for(int i = 0 ; i < NUM_PLAYERS ; i++)
+                        if(game_params[i].conn_fd == conn_fd)
+                                game_params[i].conn_fd = -1; 
+                break;
+            }
+
+            dir = *(direction *) packet.message; 
+            printf("Server: Received keystroke from player %d saying go in direction '%d'\n", packet.player_id, dir); 
+
+            //cout<<(game->players[packet.player_id]).get_pos().x<<" "<<(game->players[packet.player_id]).get_pos().y<<" "<<dir<<endl;
+            if((game->map).move(&(game->players[packet.player_id]), dir))
+            {
+                    cout<<"Move valid. Broadcasting...\n";
+                    pthread_mutex_lock(&gameLock);
+                    for(int i = 0; i < NUM_PLAYERS ; i++)
+                            if(game_params[i].conn_fd != -1)
+                                    send(game_params[i].conn_fd, &packet, sizeof(packet), 0); 
+                    pthread_mutex_unlock(&gameLock); 
+            }
+            game->map.print_map(); 
+    }
 }
 
 bool filter(char *s)
@@ -269,7 +299,7 @@ void *chat_callback(void *args)
                 break;
             }
 
-            printf("Server: Received chat from fd %d saying '%s'\n", conn_fd, packet.message); 
+            printf("Server: Received chat from player %d saying '%s'\n", packet.player_id, packet.message); 
 
             if(filter(packet.message))                      
             {
@@ -296,8 +326,6 @@ void receive_players()
         if(cnt == 2*NUM_PLAYERS)
             break;
     }
-
-
 }
 
 void server_init()
@@ -320,9 +348,6 @@ void game_init()
     game.map = Map("maps/map1"); 
     game.num_players = NUM_PLAYERS; 
     game.running = true; 
-    for(int i = 0; i < NUM_PLAYERS ; i++)
-        game.map.place_player_random(&game.players[i]); 
-    game.map.print_map(); 
 }
 
 void create_threads()
