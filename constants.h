@@ -33,7 +33,7 @@ enum pkt_type {TYPE_GAME, TYPE_CHAT, TYPE_BROADCAST, TYPE_REPLY, TYPE_START, TYP
 #define SERVER_UDP_PORT "2718" 
 #define SERVER_TCP_PORT "3142" 
 
-#define NUM_PLAYERS 2
+#define NUM_PLAYERS 3
 
 #define MAP_plain '.'
 #define MAP_wall '#'
