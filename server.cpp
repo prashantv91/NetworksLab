@@ -8,11 +8,17 @@
 #include<cassert>
 using namespace std;
 
-Game game; 
-int game_fd[MAX_PLAYERS]; 
-int chat_fd[MAX_PLAYERS]; 
+struct Params
+{
+        int conn_fd;
+        Game *game;
+}; 
 
-int backlog = 20;  // number of pending connections
+Game game; 
+Params chat_params[2*MAX_PLAYERS], game_params[2*MAX_PLAYERS]; 
+
+int fds[2*MAX_PLAYERS]; 
+int backlog = 5*MAX_PLAYERS;                                      // number of pending connections
 
 void sigchld_handler(int s)
 {
@@ -140,13 +146,10 @@ void check_connection(int sockfd, int *cnt)
     int retval, new_fd; 
     char s[100]; 
     fd_set rfds; 
-    Packet packet; 
     struct timeval tv; 
 	struct sockaddr_storage client_addr; 
     socklen_t addrlen = sizeof(client_addr); 
-    Player p;
 
-    p = game.players[*cnt];  
     FD_ZERO(&rfds);
     FD_SET(sockfd, &rfds);
     tv.tv_sec = 0;
@@ -156,6 +159,7 @@ void check_connection(int sockfd, int *cnt)
     if(retval != 0){
 		// accept connection and find get new file descriptor
 		new_fd = accept(sockfd, (struct sockaddr *)&client_addr, &addrlen);
+        //cout<<"new fd: "<<new_fd<<endl;
 		if (new_fd == -1) 
 		{
 			perror("Server: accept");
@@ -165,47 +169,93 @@ void check_connection(int sockfd, int *cnt)
 		//display details of client 
 		inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr), s, sizeof s);
 		printf("Server: Accepted connection from %s\n", s);
+        fds[*cnt] = new_fd; 
+        (*cnt)++; 
 
+    }
+}
+
+void send_ids()
+{
+    int new_fd, cnt = 0; 
+    int chat_cnt = 0; 
+    Player p;
+    Packet packet; 
+
+    for(int i = 0; i < 2*NUM_PLAYERS; i++)
+    {
+        new_fd = fds[i]; 
         if((recv(new_fd, 
-                &packet,
-                sizeof(Packet), 
-                0)) == -1)
+                        &packet,
+                        sizeof(Packet), 
+                        0)) == -1)
         {
             perror("Server: recv");
         }
 
-
         if(packet.packet_type == TYPE_GAME)
         {
-            game_fd[*cnt] = new_fd; 
-            p.set_id(*cnt); 
+            p = game.players[cnt]; 
+
+            game_params[cnt].conn_fd = new_fd;
+            game_params[cnt].game = &game; 
+
+            p.set_id(cnt); 
             p.set_char(packet.message[0]); 
             p.set_name(packet.message + 1); 
             printf("Server: %s has joined the game with character %c and id %d\n", p.get_name(), p.get_char(), p.get_id()); 
 
-            packet.player_id = *cnt; 
+            packet.player_id = cnt; 
             packet.packet_type = TYPE_REPLY; 
 
             if((send(new_fd, 
-                    &packet, 
-                    sizeof(Packet),
-                    0)) == -1)
+                            &packet, 
+                            sizeof(Packet),
+                            0)) == -1)
             {
                 perror("Server: send"); 
             }
-            (*cnt)++; 
+            cnt++; 
         }
         else
         {
             assert(packet.packet_type == TYPE_CHAT); 
-            chat_fd[*cnt] = new_fd; 
+
+            chat_params[chat_cnt].conn_fd = new_fd;
+            chat_params[chat_cnt].game = &game; 
+            chat_cnt++; 
         }
     }
+}
+
+void *game_callback(void *args)
+{
+    int conn_fd, ret; 
+    Game *game; 
+    Packet packet; 
+    Params *params;
+
+    params = (Params *)(args);
+    conn_fd = params -> conn_fd;
+    game = params -> game; 
+
+    if((ret = send(conn_fd, game, sizeof(*game), 0)) == -1)
+            perror("Server: send game info");
+
+    packet.packet_type = TYPE_START;
+    send(conn_fd, &packet, sizeof(packet), 0); 
+}
+
+void *chat_callback(void *args)
+{
+    Params *params = (Params *)(args);
 }
 
 void receive_players()
 {
     int sockfd_udp, sockfd_tcp, cnt = 0;
+    pthread_t *threadObj; 
+
     create_socket(&sockfd_udp, SERVER_UDP_PORT, 0); 
     create_socket(&sockfd_tcp, SERVER_TCP_PORT, 1); 
 
@@ -213,9 +263,27 @@ void receive_players()
     {
         check_broadcast(sockfd_udp); 
         check_connection(sockfd_tcp, &cnt); 
-        if(cnt == NUM_PLAYERS)
+        if(cnt == 2*NUM_PLAYERS)
             break;
     }
+
+    send_ids(); 
+
+    threadObj = new pthread_t[2*NUM_PLAYERS]; 
+
+    for(int i = 0; i < NUM_PLAYERS ; i++)
+    {
+            pthread_create(&threadObj[2*i], NULL, game_callback, (void *)(&game_params[i])); 
+            pthread_create(&threadObj[2*i+1], NULL, chat_callback, (void *)(&chat_params[i])); 
+    }
+
+    for(int i = 0; i < NUM_PLAYERS ; i++)
+    {
+            pthread_join(threadObj[2*i], NULL);
+            pthread_join(threadObj[2*i+1], NULL);
+    }
+
+    delete[] threadObj; 
 }
 
 void server_init()
@@ -236,6 +304,7 @@ void game_init()
 {
     srand(time(0)); 
     game.map = Map("maps/map1"); 
+    game.num_players = NUM_PLAYERS; 
     for(int i = 0; i < NUM_PLAYERS ; i++)
         game.map.place_player_random(&game.players[i]); 
     game.map.print_map(); 

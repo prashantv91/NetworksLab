@@ -161,9 +161,9 @@ void Map::print_map()
 {
     REP(x, MAP_MAXX)
     {
-            REP(y, MAP_MAXY)
-                    cout<<map[x][y];
-            cout<<endl;
+        REP(y, MAP_MAXY)
+            cout<<map[x][y];
+        cout<<endl;
     }
     cout<<endl;
 }
