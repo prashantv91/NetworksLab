@@ -33,3 +33,4 @@ void create_socket(int *, char *, int);
 void receive_players(); 
 void check_broadcast(); 
 void check_connection(int, int *); 
+bool filter(char *);
