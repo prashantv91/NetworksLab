@@ -8,7 +8,6 @@
 
 #include "constants.h"
 #include "position.h"
-
 //        y
 //    *--->
 //    |
@@ -42,6 +41,4 @@ class Map
     void place_player_random(Player* pl);
 
 };
-
 #endif
-
