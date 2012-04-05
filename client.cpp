@@ -99,45 +99,160 @@ int broadcast_it(int sockfd_broadcast)
 
 }
 
-void get_server_tcp_port(int udp_sockfd, sockaddr &server_addr, char* server_port, socklen_t &addrlen)         //Returns through the arguments.
+void get_server_tcp_port(int udp_sockfd, char* &server_address, char* &server_port, socklen_t &addrlen, sockaddr_storage server_addr)         //Returns through the arguments.
 {
+//    sockaddr server_addr;
     Packet packet;
     int numbytes;
+    char s[100];
     
 
-    if ((numbytes = recvfrom(udp_sockfd, &packet, sizeof(packet), 0, &server_addr, &addrlen)) == -1) 
+    if ((numbytes = recvfrom(udp_sockfd, &packet, sizeof(packet), 0, (sockaddr*)&server_addr, &addrlen)) == -1) 
     {
         perror("Client::get_server_tcp_port(): recvfrom");
         return;
     }
-    server_port = new char[strlen(packet.message)];
+
+    server_port = new char[strlen(packet.message)+1];
     strcpy(server_port, packet.message);
 
+    inet_ntop(server_addr.ss_family, get_in_addr((sockaddr*)&server_addr), s, 100);
+    server_address = new char[strlen(s)+1];
+    strcpy(server_address, s);
+
 #ifdef DEBUG
-    char s[100];
-    fprintf(stderr, "Found server at %s.\nIt says \"%s\".\n", inet_ntop(server_addr.sa_family, get_in_addr((sockaddr*)&server_addr), s, 100), server_port);
+    //char s[100];
+   fprintf(stderr, "Found server at %s.\nIt says \"%s\".\n", server_address, server_port);
 #endif
 
 }
 
-Params client_init()
+void get_connections(char *server_addr, char *server_port, Params &params)
+{
+    addrinfo hints, *servinfo, *p;
+    int rv, numbytes, broadcast;
+    int sockfd;
+    
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+
+	if ((rv = getaddrinfo(server_addr, server_port, &hints, &servinfo)) != 0) 
+    {
+		fprintf(stderr, "Client::get_connections(): getaddrinfo: %s\n", gai_strerror(rv));
+		return;
+	}
+
+	for(p = servinfo; p != NULL; p = p->ai_next) 
+    {
+		if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) 
+        {
+			perror("Client::get_connections(): socket");
+			continue;
+		}
+
+		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) 
+        {
+			close(sockfd);
+			perror("Client::get_connections(): connect");
+			continue;
+		}
+        params.sockfd_game = sockfd;
+
+		if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) 
+        {
+			perror("Client::get_connections(): socket");
+			continue;
+		}
+
+		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) 
+        {
+			close(sockfd);
+			perror("Client::get_connections(): connect");
+			continue;
+		}
+        params.sockfd_chat = sockfd;
+		
+        break;
+	}
+
+	if (p == NULL) 
+    {
+		fprintf(stderr, "Client::get_connections(): failed to connect\n");
+		return;
+	}
+
+	freeaddrinfo(servinfo);
+
+#ifdef DEBUG
+    char s[100];
+    inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s);
+	fprintf(stderr, "Connecting to %s with FDs %d, %d.\n", s, params.sockfd_game, params.sockfd_chat);
+#endif
+
+}
+
+int first_contact(Params params, char player_char, char player_name[])
+{
+    Packet packet;
+    int rv, sockfd;
+    
+    sockfd = params.sockfd_chat;
+    packet.packet_type = TYPE_CHAT;
+    packet.message[0] = player_char;
+    strcpy(packet.message + 1, player_name);
+    
+    send_packet(sockfd, &packet);
+
+#ifdef DEBUG
+    fprintf(stderr, "Sent identificaiton for chat line.\n");
+#endif
+    
+    sockfd = params.sockfd_game;
+    packet.packet_type = TYPE_GAME;
+    send_packet(sockfd, &packet);
+
+#ifdef DEBUG
+    fprintf(stderr, "Sent identificaiton for game line.\n");
+    fprintf(stderr, "Sent character \'%c\', name \"%s\".\n", player_char, player_name);
+#endif
+
+    recv_packet(sockfd, &packet);
+
+#ifdef DEBUG
+    fprintf(stderr, "Got ID %d.\n", packet.player_id);
+#endif
+
+    return packet.player_id;    
+}
+
+Params client_init(char player_char, char player_name[])
 {
     /*
-     * Send broadcast.
-     * Receive UDP replies from server.
-     * Request and establish two connections with server.
+     * * Send broadcast.
+     * * Receive UDP replies from server.
+     * * Request and establish two connections with server.
      * Get map and players from server and initialise local structures.
      */
     
     int udp_sockfd;
     Params params;
-    sockaddr server_addr;
-    char* server_port;
-    socklen_t addrlen;
+    sockaddr_storage sock;
+    char *server_port, *server_addr;
+    socklen_t addrlen = sizeof(sock);
 
     udp_sockfd = get_udp_broadcast_socket();
     broadcast_it(udp_sockfd);
-    get_server_tcp_port(udp_sockfd, server_addr, server_port, addrlen);
+    get_server_tcp_port(udp_sockfd, server_addr, server_port, addrlen, sock);
+    
+    get_connections(server_addr, server_port, params);
+
+    params.player_id = first_contact(params, player_char, player_name);   
+    
+    
+
+
+
 
 
 
@@ -210,7 +325,11 @@ int main()
     Params params;
     //GAME_RUNNING = true;
     //keyboard(&params);
-    client_init();
+    
+    char player_char = '@';
+    char player_name[] = "gilmagunaa";
+
+    client_init(player_char, player_name);
 
     return 0;
 }

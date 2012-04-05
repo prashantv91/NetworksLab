@@ -15,7 +15,7 @@ class Player
     char player_char;
     char player_name[PLAYER_NAME_SIZE];
     Position player_pos;
-    bool map_mask[MAP_MAXX][MAP_MAXX];
+    //bool map_mask[MAP_MAXX][MAP_MAXX];
 
     public:
 
