@@ -143,8 +143,9 @@ bool Map::move(Player* player, direction dir)
     char pl_char = player->get_char();
 
     if (map[pos.x][pos.y] != pl_char)          //If player object is lying about its position, abort.
+    {
         return false;
-
+    }
     new_pos = pos;
     new_pos.move(dir);
     if (!safe(new_pos))

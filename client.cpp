@@ -11,7 +11,9 @@
 #include <bits/pthreadtypes.h>
 using namespace std;
 
+bool game_running;
 Game game;
+pthread_mutex_t lock;
 
 void *get_in_addr(struct sockaddr *sa)
 {
@@ -271,7 +273,8 @@ void* game_fn(void *args)
         perror("Client::game_fn(): recv");
         return NULL;
     }
-
+for (int i = 0; i < game.num_players; i++)
+    cerr<<game.players[i].get_pos().x<<' '<<game.players[i].get_pos().y<<endl;
 #ifdef DEBUG
     fprintf(stderr, "Received game. %d bytes. Number of players: %d.\n", numbytes, game.num_players);
 #endif
@@ -281,22 +284,35 @@ void* game_fn(void *args)
         recv_packet(sockfd, &packet);
     } while (packet.packet_type != TYPE_START);
 
-    game.map.print_map();
-    
+    game.map.draw_map();
+
+    //pthread_mutex_lock(&lock);
+    game_running = true;
+    //pthread_mutex_lock(&lock);
+
     while (recv_packet(sockfd, &packet))
-    {
+    {cerr<<"GAME PACKET\n";
+        //pthread_mutex_lock(&lock);
+        if (!game_running)
+            break;
+        //pthread_mutex_unlock(&lock);
+
         if (packet.packet_type == TYPE_GAME)
         {
             dir = *(direction*)(packet.message);
             player = &(game.players[packet.player_id]);
             game.map.move(player, dir);
-            //game.map.draw_map();
-            game.map.print_map();
+            game.map.draw_map();
+            //game.map.print_map();
         }
         else
         if (packet.packet_type == TYPE_STOP)
             break;
     }
+
+    //pthread_mutex_lock(&lock);
+    game_running = false;
+    //pthread_mutex_unlock(&lock);
 
 #ifdef DEBUG
     fprintf(stderr, "Game thread exiting.\n");
@@ -319,12 +335,21 @@ void* chat_fn(void *args)
 
     while (recv_packet(sockfd, &packet))
     {
+        //pthread_mutex_lock(&lock);
+        if (!game_running)
+            break;
+        //pthread_mutex_unlock(&lock);
+
         if (packet.packet_type == TYPE_CHAT)
         {
             player = game.players[packet.player_id];
-            printf("---CHAT--- %c%s: %s\n", player.get_char(), player.get_name(), packet.message);
+            /**/printf("---CHAT--- %c%s: %s\n", player.get_char(), player.get_name(), packet.message);
         }
     }
+
+    //pthread_mutex_lock(&lock);
+    game_running = false;
+    //pthread_mutex_unlock(&lock);
 
 #ifdef DEBUG
     fprintf(stderr, "Chat thread exiting.\n");
@@ -335,35 +360,40 @@ void* chat_fn(void *args)
 
 void* keyboard_fn(void *args)
 {
+
+    //pthread_mutex_lock(&lock);
+    while (!game_running)
+    {
+        //pthread_mutex_unlock(&lock);
+        sleep(1);
+        //pthread_mutex_lock(&lock);
+    }
+    //pthread_mutex_unlock(&lock);
+
+
     Params params = *(Params*)(args);
     Packet game_pkt, chat_pkt;
+
     int chat_ind = 0;
-    char ch, s[10*PKT_MSG_SIZE+1];
+    char ch;
+    /**/Player P = game.players[params.player_id];
 
     game_pkt.player_id = params.player_id;
     game_pkt.packet_type = TYPE_GAME;
 
     chat_pkt.player_id = params.player_id;
     chat_pkt.packet_type = TYPE_CHAT;
-
-    while (1)
-    {
-        
-    }
-
-
-    //while (GAME_RUNNING)
-    //for (int i = 0 ; i < 20; i++)
-    /*
-    while (1)
+    
+    while (game_running)
     {
         while (!keypressed());
         ch = readkey() % 256;
         if (ch > 0 && ch < 128)
         {
-            if (ch !='\n' && ch != '\r' && (chat_ind % PKT_MSG_SIZE != PKT_MSG_SIZE-1))
+
+            if (ch !='\n' && ch != '\r' && (chat_ind < PKT_MSG_SIZE-1))
             {
-                s[chat_ind] = ch;
+                chat_pkt.message[chat_ind] = ch;
                 chat_ind++;
 #ifdef DEBUG
                 textprintf_ex(screen, font, chat_ind*8, 0, makecol(255, 100, 200), -1, "%c", ch);  //x and y interchanged due to differing conventions.
@@ -372,31 +402,76 @@ void* keyboard_fn(void *args)
             }
             else
             {
-                s[chat_ind] = 0;
-                chat_ind++;
-                if (chat_ind == 10*PKT_MSG_SIZE)
-                    chat_ind = 0;
-                break;
-            }
+                chat_pkt.message[chat_ind] = 0;
+                chat_ind = 0;
 
+                send_packet(params.sockfd_chat, &chat_pkt);
+            }
+            
+        }
+
+        if (key[KEY_ESC])
+            break;
+        
+        if (key[KEY_UP])
+        {
+            *(direction*)(game_pkt.message) = UP;
+            send_packet(params.sockfd_game, &game_pkt);
+        }
+        else
+        if (key[KEY_LEFT])
+        {
+            *(direction*)(game_pkt.message) = LEFT;
+            send_packet(params.sockfd_game, &game_pkt);
+        }
+        else
+        if (key[KEY_DOWN])
+        {
+            *(direction*)(game_pkt.message) = DOWN;
+            send_packet(params.sockfd_game, &game_pkt);
+        }
+        else
+        if (key[KEY_RIGHT])
+        {
+            *(direction*)(game_pkt.message) = RIGHT;
+            send_packet(params.sockfd_game, &game_pkt);
         }
         
+        //game.map.draw_map();
     }
-    */
+    
+    //pthread_mutex_lock(&lock);
+    game_running = false;
+    //pthread_mutex_unlock(&lock);
 
 #ifdef DEBUG
     fprintf(stderr, "Keyboard thread exiting.\n");
 #endif
-
+    
     return NULL;
 }
 
+void start_allegro()
+{
+    allegro_init();
+    install_keyboard();
+
+    if (set_gfx_mode(GFX_AUTODETECT_WINDOWED, SCREEN_X, SCREEN_Y, 0, 0)) 
+    {
+        allegro_message("Video Error: %s.\n", allegro_error);
+        exit(1);
+    }
+}
 
 int main()
 {
     Params params;
     char player_char = '@';
     char player_name[] = "gilmagunaa";
+    
+    start_allegro();    
+        
+    game_running = false;
 
     params = client_init(player_char, player_name);
 
@@ -404,12 +479,13 @@ int main()
     
     pthread_create(&game_thread, NULL, &game_fn, (void*)&params);
     pthread_create(&chat_thread, NULL, &chat_fn, (void*)&params);
-    //pthread_create(&keyboard_thread, NULL, &keyboard_fn, (void*)&params);
+    pthread_create(&keyboard_thread, NULL, &keyboard_fn, (void*)&params);
 
     pthread_join(game_thread, NULL);
     pthread_join(chat_thread, NULL);
-    game.running = false;
-    //pthread_join(keyboard_thread, NULL);
+    pthread_join(keyboard_thread, NULL);
+
+    fprintf(stderr, "EXITING.\n");
 
     return 0;
 }
