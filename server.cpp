@@ -3,6 +3,14 @@
  */
 
 #include"server.h"
+#include"game.h"
+#include<iostream>
+#include<cassert>
+using namespace std;
+
+Game game; 
+int game_fd[MAX_PLAYERS]; 
+int chat_fd[MAX_PLAYERS]; 
 
 int backlog = 20;  // number of pending connections
 
@@ -83,7 +91,7 @@ void create_socket(int *sockfd, char *port, int conn_type)
             perror("listen");
             exit(1);
         }
-        printf("Game server listening on port %s...\n", port);
+        printf("TCP server listening on port %s...\n", port);
     }
     else
         printf("UDP server up on port %s\n", port); 
@@ -127,22 +135,84 @@ void check_broadcast(int sockfd)
     }
 }
 
-int check_connection(int sockfd)
+void check_connection(int sockfd, int *cnt)
 {
-    return 0;
+    int retval, new_fd; 
+    char s[100]; 
+    fd_set rfds; 
+    Packet packet; 
+    struct timeval tv; 
+	struct sockaddr_storage client_addr; 
+    socklen_t addrlen = sizeof(client_addr); 
+    Player p;
+
+    p = game.players[*cnt];  
+    FD_ZERO(&rfds);
+    FD_SET(sockfd, &rfds);
+    tv.tv_sec = 0;
+    tv.tv_usec = 100000; 
+    retval = select(sockfd + 1, &rfds, NULL, NULL, &tv);
+
+    if(retval != 0){
+		// accept connection and find get new file descriptor
+		new_fd = accept(sockfd, (struct sockaddr *)&client_addr, &addrlen);
+		if (new_fd == -1) 
+		{
+			perror("Server: accept");
+            exit(1); 
+		}
+		
+		//display details of client 
+		inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr), s, sizeof s);
+		printf("Server: Accepted connection from %s\n", s);
+
+        if((recv(new_fd, 
+                &packet,
+                sizeof(Packet), 
+                0)) == -1)
+        {
+            perror("Server: recv");
+        }
+
+
+        if(packet.packet_type == TYPE_GAME)
+        {
+            game_fd[*cnt] = new_fd; 
+            p.set_id(*cnt); 
+            p.set_char(packet.message[0]); 
+            p.set_name(packet.message + 1); 
+            printf("Server: %s has joined the game with character %c and id %d\n", p.get_name(), p.get_char(), p.get_id()); 
+
+            packet.player_id = *cnt; 
+            packet.packet_type = TYPE_REPLY; 
+
+            if((send(new_fd, 
+                    &packet, 
+                    sizeof(Packet),
+                    0)) == -1)
+            {
+                perror("Server: send"); 
+            }
+            (*cnt)++; 
+        }
+        else
+        {
+            assert(packet.packet_type == TYPE_CHAT); 
+            chat_fd[*cnt] = new_fd; 
+        }
+    }
 }
 
 void receive_players()
 {
-    int sockfd_udp, sockfd_tcp, cnt = 0, val; 
+    int sockfd_udp, sockfd_tcp, cnt = 0;
     create_socket(&sockfd_udp, SERVER_UDP_PORT, 0); 
     create_socket(&sockfd_tcp, SERVER_TCP_PORT, 1); 
 
     while(1)
     {
         check_broadcast(sockfd_udp); 
-        val = check_connection(sockfd_tcp); 
-        cnt += val; 
+        check_connection(sockfd_tcp, &cnt); 
         if(cnt == NUM_PLAYERS)
             break;
     }
@@ -162,8 +232,18 @@ void server_init()
 	}
 }
 
+void game_init()
+{
+    srand(time(0)); 
+    game.map = Map("maps/map1"); 
+    for(int i = 0; i < NUM_PLAYERS ; i++)
+        game.map.place_player_random(&game.players[i]); 
+    game.map.print_map(); 
+}
+
 int main()
 {
+    game_init(); 
     server_init(); 
     receive_players(); 
     return 0; 

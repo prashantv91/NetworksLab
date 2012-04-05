@@ -3,6 +3,7 @@
  */
 
 #include "player.h"
+#include "string.h"
 
 /* Constructors */
 
@@ -53,6 +54,11 @@ char Player::get_char() const
     return player_char;
 }
 
+char *Player::get_name()
+{
+    return player_name;
+}
+
 Position Player::get_pos() const
 {
     return player_pos;
@@ -66,5 +72,20 @@ void Player::set_pos(const Position& pos)
 void Player::move(direction dir)
 {
     player_pos.move(dir);
+}
+
+void Player::set_id(int id)
+{
+    player_id = id;
+}
+
+void Player::set_char(char c)
+{
+    player_char = c;
+}
+
+void Player::set_name(char *name)
+{
+    strcpy(player_name, name);
 }
 

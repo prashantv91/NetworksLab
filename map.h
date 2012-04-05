@@ -1,11 +1,7 @@
 /*
- * map.h - The Map class which maintains the map, handles movement and draws the map, etc.
- */
-
-#ifndef MAP_H
-
-#define MAP_H
-
+ * map.h - The Map class which maintains the map, handles movement and draws the map, etc.  */ 
+#ifndef MAP_H 
+#define MAP_H 
 #include "constants.h"
 #include "position.h"
 //        y

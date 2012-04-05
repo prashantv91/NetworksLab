@@ -29,7 +29,7 @@ int main()
     //    allegro_message("Video Error: %s.\n", allegro_error);
     //    exit(1);
     //}
-    //M.print_map();
+    //M.draw_map();
     
     //server_main(); 
     //client_main();
@@ -51,18 +51,18 @@ int main()
         else
         if (key[KEY_RIGHT])
             M.move(&P, RIGHT);
-        M.print_map();
+        M.draw_map();
     }
     
     
     M.move(&P, UP);
-    M.print_map();
+    M.draw_map();
     M.move(&P, LEFT);
-    M.print_map();
+    M.draw_map();
     M.move(&P, DOWN);
-    M.print_map();
+    M.draw_map();
     M.move(&P, RIGHT);
-    M.print_map();
+    M.draw_map();
     */
 
     return 0;   

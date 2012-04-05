@@ -27,11 +27,14 @@ class Player
 
     int get_id() const;
     char get_char() const;
+    char *get_name(); 
     Position get_pos() const;
     void set_pos(const Position& pos);
     void move(direction dir);
     void look();
-
+    void set_id(int);
+    void set_char(char);
+    void set_name(char *); 
 };
 
 #endif
