@@ -13,7 +13,9 @@ class Player
 {
     int player_id;
     char player_char;
+    char player_name[PLAYER_NAME_SIZE];
     Position player_pos;
+    bool map_mask[MAP_MAXX][MAP_MAXX];
 
     public:
 
@@ -28,7 +30,7 @@ class Player
     Position get_pos() const;
     void set_pos(const Position& pos);
     void move(direction dir);
-    
+    void look();
 
 };
 

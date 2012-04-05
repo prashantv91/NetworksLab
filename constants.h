@@ -14,22 +14,29 @@
 #define REP(a, b)  for (int a = 0; a < int(b); a++)
 #define debug(x) cerr<<#x
 
-const int SCREEN_X = 640;
-const int SCREEN_Y = 480;
+#define SCREEN_X 640
+#define SCREEN_Y 480
 
-const int MAP_MAXX = 10;
-const int MAP_MAXY = 10;
-const int MAX_PLAYERS = 10;
+#define MAP_MAXX 10
+#define MAP_MAXY 10
+#define MAX_PLAYERS 10
 
-const int GIVE_UP = MAP_MAXX * MAP_MAXY;
+#define GIVE_UP 100
 
 enum direction {UP, LEFT, DOWN, RIGHT};
 enum pkt_type {TYPE_GAME, TYPE_CHAT, TYPE_BROADCAST, TYPE_REPLY, TYPE_START, TYPE_STOP, TYPE_MAP};
-const int PKT_MSG_SIZE = 101;
+#define PKT_MSG_SIZE 101
 
 #define FOR_EACH_DIR(dir)  for (direction dir = UP; dir <= RIGHT; dir++)
 
-const char MAP_plain = '.', MAP_wall = '#';
+#define MAP_plain '.'
+#define MAP_wall '#'
+
+#define SERVER_UDP_PORT "2718"
+#define CLIENT_PORT "3141"
+#define BROADCAST_ADDRESS "255.255.255.255"
+
+#define PLAYER_NAME_SIZE 21
 
 #endif
 

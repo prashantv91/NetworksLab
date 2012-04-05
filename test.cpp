@@ -3,7 +3,7 @@
  */
 
 #include "map.h"
-#include "position.h"
+//#include "position.h"
 #include "player.h"
 #include "client.h"
 #include <allegro.h>
@@ -12,7 +12,7 @@ using namespace std;
 
 int main()
 {
-    allegro_init();
+    /*allegro_init();
     install_keyboard();
 
     Map M("maps/map1");
@@ -29,7 +29,7 @@ int main()
         exit(1);
     }
     M.print_map();
-    
+    */
     client_main();
 
     /*
