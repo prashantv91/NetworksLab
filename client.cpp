@@ -5,6 +5,10 @@
 #include "client.h"
 #include <iostream>
 #include <cstdio>
+#include <stdlib.h>
+#include <pthread.h>
+#include <sys/types.h>
+#include <bits/pthreadtypes.h>
 using namespace std;
 
 Game game;
@@ -232,7 +236,7 @@ Params client_init(char player_char, char player_name[])
      * * Send broadcast.
      * * Receive UDP replies from server.
      * * Request and establish two connections with server.
-     * Get map and players from server and initialise local structures.
+     * * Get map and players from server and initialise local structures.
      */
     
     int udp_sockfd;
@@ -249,32 +253,87 @@ Params client_init(char player_char, char player_name[])
 
     params.player_id = first_contact(params, player_char, player_name);   
     
+    return params;
+
+}
+
+void* game_fn(void *args)
+{
+    Params params = *(Params*)(args);
+    int sockfd = params.sockfd_game;
+    int numbytes;
+    direction dir;
+    Player *player;
+    Packet packet;
+
+    if ((numbytes = recv(sockfd, &game, sizeof(game), 0)) < 0)
+    {
+        perror("Client::game_fn(): recv");
+        return NULL;
+    }
+
+#ifdef DEBUG
+    fprintf(stderr, "Received game. %d bytes. Number of players: %d.\n", numbytes, game.num_players);
+#endif
+
+    do
+    {
+        recv_packet(sockfd, &packet);
+    } while (packet.packet_type != TYPE_START);
+
+    game.map.print_map();
+    
+    while (recv_packet(sockfd, &packet))
+    {
+        if (packet.packet_type == TYPE_GAME)
+        {
+            dir = *(direction*)(packet.message);
+            player = &(game.players[packet.player_id]);
+            game.map.move(player, dir);
+            //game.map.draw_map();
+            game.map.print_map();
+        }
+        else
+        if (packet.packet_type == TYPE_STOP)
+            break;
+    }
+
+#ifdef DEBUG
+    fprintf(stderr, "Game thread exiting.\n");
+#endif
+
+    return NULL;
+}
+
+void* chat_fn(void *args)
+{
+    Params params = *(Params*)(args);
+    int sockfd = params.sockfd_chat;
+    Player player;
+    Packet packet;
+    int chat_startx = SCREEN_X - 8*MAP_MAXX - 16, chat_width = (SCREEN_X - chat_startx)/8;
+    int chat_starty = SCREEN_Y - 8*MAP_MAXY - 16, chat_height = (SCREEN_Y - chat_starty)/8;
+    char **chatroll;
+    
     
 
+    while (recv_packet(sockfd, &packet))
+    {
+        if (packet.packet_type == TYPE_CHAT)
+        {
+            player = game.players[packet.player_id];
+            printf("---CHAT--- %c%s: %s\n", player.get_char(), player.get_name(), packet.message);
+        }
+    }
 
+#ifdef DEBUG
+    fprintf(stderr, "Chat thread exiting.\n");
+#endif
 
-
-
-
-
-
-
-
-
-
+    return NULL;
 }
 
-void game_thread(void *args)
-{
-    return;
-
-}
-
-void chat_thread(void *args)
-{
-}
-
-void keyboard(void *args)
+void* keyboard_fn(void *args)
 {
     Params params = *(Params*)(args);
     Packet game_pkt, chat_pkt;
@@ -287,9 +346,15 @@ void keyboard(void *args)
     chat_pkt.player_id = params.player_id;
     chat_pkt.packet_type = TYPE_CHAT;
 
+    while (1)
+    {
+        
+    }
+
 
     //while (GAME_RUNNING)
     //for (int i = 0 ; i < 20; i++)
+    /*
     while (1)
     {
         while (!keypressed());
@@ -311,25 +376,40 @@ void keyboard(void *args)
                 chat_ind++;
                 if (chat_ind == 10*PKT_MSG_SIZE)
                     chat_ind = 0;
-                /**/break;
+                break;
             }
 
         }
         
     }
+    */
+
+#ifdef DEBUG
+    fprintf(stderr, "Keyboard thread exiting.\n");
+#endif
+
+    return NULL;
 }
 
 
 int main()
 {
     Params params;
-    //GAME_RUNNING = true;
-    //keyboard(&params);
-    
     char player_char = '@';
     char player_name[] = "gilmagunaa";
 
-    client_init(player_char, player_name);
+    params = client_init(player_char, player_name);
+
+    pthread_t game_thread, chat_thread, keyboard_thread;
+    
+    pthread_create(&game_thread, NULL, &game_fn, (void*)&params);
+    pthread_create(&chat_thread, NULL, &chat_fn, (void*)&params);
+    //pthread_create(&keyboard_thread, NULL, &keyboard_fn, (void*)&params);
+
+    pthread_join(game_thread, NULL);
+    pthread_join(chat_thread, NULL);
+    game.running = false;
+    //pthread_join(keyboard_thread, NULL);
 
     return 0;
 }

@@ -16,7 +16,7 @@ bool send_packet(int sockfd, Packet* packet)
         return false;
     }
 #ifdef DEBUG
-    cerr<<"recv_packet: Packet contains: "<<packet->player_id<<' '<<packet->packet_type<<' '<<packet->message<<endl;
+    cerr<<"send_packet: Packet contains: "<<packet->player_id<<' '<<packet->packet_type<<' '<<packet->message<<endl;
 #endif
     return true;
 }
