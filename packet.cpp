@@ -3,8 +3,20 @@
  */
 
 #include "packet.h"
+#include <cstring>
 #include <iostream>
 using namespace std;
+
+Packet::Packet()
+{
+}
+
+Packet::Packet(int id, pkt_type type, char *s)
+{
+    player_id = id;
+    packet_type = type;
+    strcpy(message, s); 
+}
 
 bool send_packet(int sockfd, Packet* packet)
 {
