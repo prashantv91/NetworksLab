@@ -6,6 +6,7 @@
 #include"game.h"
 #include<iostream>
 #include<cassert>
+#include<queue>
 using namespace std;
 
 struct Params
@@ -16,6 +17,7 @@ struct Params
 
 Game game; 
 Params chat_params[2*MAX_PLAYERS], game_params[2*MAX_PLAYERS]; 
+pthread_mutex_t chatLock;                                         // lock for sending chat messages
 
 int fds[2*MAX_PLAYERS]; 
 int backlog = 5*MAX_PLAYERS;                                      // number of pending connections
@@ -195,15 +197,13 @@ void send_ids()
 
         if(packet.packet_type == TYPE_GAME)
         {
-            p = game.players[cnt]; 
-
             game_params[cnt].conn_fd = new_fd;
             game_params[cnt].game = &game; 
 
-            p.set_id(cnt); 
-            p.set_char(packet.message[0]); 
-            p.set_name(packet.message + 1); 
-            printf("Server: %s has joined the game with character %c and id %d\n", p.get_name(), p.get_char(), p.get_id()); 
+            game.players[cnt].set_id(cnt); 
+            game.players[cnt].set_char(packet.message[0]); 
+            game.players[cnt].set_name(packet.message + 1); 
+            printf("Server: %s has joined the game with character %c and id %d\n", game.players[cnt].get_name(), game.players[cnt].get_char(), game.players[cnt].get_id()); 
 
             packet.player_id = cnt; 
             packet.packet_type = TYPE_REPLY; 
@@ -246,15 +246,45 @@ void *game_callback(void *args)
     send(conn_fd, &packet, sizeof(packet), 0); 
 }
 
+bool filter(char *s)
+{
+        return true; 
+}
+
 void *chat_callback(void *args)
 {
     Params *params = (Params *)(args);
+    int conn_fd;
+    Packet packet; 
+    
+    conn_fd = params -> conn_fd; 
+
+    while(1)
+    {
+            if(recv(conn_fd, &packet, sizeof(packet), 0) <= 0)
+            {
+                for(int i = 0 ; i < NUM_PLAYERS ; i++)
+                        if(chat_params[i].conn_fd == conn_fd)
+                                chat_params[i].conn_fd = -1; 
+                break;
+            }
+
+            printf("Server: Received chat from fd %d saying '%s'\n", conn_fd, packet.message); 
+
+            if(filter(packet.message))                      
+            {
+                    pthread_mutex_lock(&chatLock);
+                    for(int i = 0; i < NUM_PLAYERS ; i++)
+                            if(chat_params[i].conn_fd != -1)
+                                    send(chat_params[i].conn_fd, &packet, sizeof(packet), 0); 
+                    pthread_mutex_unlock(&chatLock); 
+            }
+    }
 }
 
 void receive_players()
 {
     int sockfd_udp, sockfd_tcp, cnt = 0;
-    pthread_t *threadObj; 
 
     create_socket(&sockfd_udp, SERVER_UDP_PORT, 0); 
     create_socket(&sockfd_tcp, SERVER_TCP_PORT, 1); 
@@ -267,23 +297,7 @@ void receive_players()
             break;
     }
 
-    send_ids(); 
 
-    threadObj = new pthread_t[2*NUM_PLAYERS]; 
-
-    for(int i = 0; i < NUM_PLAYERS ; i++)
-    {
-            pthread_create(&threadObj[2*i], NULL, game_callback, (void *)(&game_params[i])); 
-            pthread_create(&threadObj[2*i+1], NULL, chat_callback, (void *)(&chat_params[i])); 
-    }
-
-    for(int i = 0; i < NUM_PLAYERS ; i++)
-    {
-            pthread_join(threadObj[2*i], NULL);
-            pthread_join(threadObj[2*i+1], NULL);
-    }
-
-    delete[] threadObj; 
 }
 
 void server_init()
@@ -305,9 +319,33 @@ void game_init()
     srand(time(0)); 
     game.map = Map("maps/map1"); 
     game.num_players = NUM_PLAYERS; 
+    game.running = true; 
     for(int i = 0; i < NUM_PLAYERS ; i++)
         game.map.place_player_random(&game.players[i]); 
     game.map.print_map(); 
+}
+
+void create_threads()
+{
+    pthread_t *threadObj; 
+
+    /* Create and start threads */
+    threadObj = new pthread_t[2*NUM_PLAYERS];           
+
+    for(int i = 0; i < NUM_PLAYERS ; i++)
+    {
+            pthread_create(&threadObj[2*i], NULL, game_callback, (void *)(&game_params[i])); 
+            pthread_create(&threadObj[2*i+1], NULL, chat_callback, (void *)(&chat_params[i])); 
+    }
+
+    /* Wait for threads to finish */
+    for(int i = 0; i < NUM_PLAYERS ; i++)
+    {
+            pthread_join(threadObj[2*i], NULL);
+            pthread_join(threadObj[2*i+1], NULL);
+    }
+
+    delete[] threadObj; 
 }
 
 int main()
@@ -315,5 +353,7 @@ int main()
     game_init(); 
     server_init(); 
     receive_players(); 
+    send_ids(); 
+    create_threads(); 
     return 0; 
 }
