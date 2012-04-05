@@ -27,6 +27,5 @@ struct Packet
 
 bool send_packet(int sockfd, Packet* packet);
 bool recv_packet(int sockfd, Packet* packet);
-
 #endif
 

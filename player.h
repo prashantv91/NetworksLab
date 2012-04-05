@@ -28,8 +28,6 @@ class Player
     Position get_pos() const;
     void set_pos(const Position& pos);
     void move(direction dir);
-    
-
 };
 
 #endif

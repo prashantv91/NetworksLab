@@ -6,31 +6,33 @@
 #include "position.h"
 #include "player.h"
 #include "client.h"
+#include "server.h"
 #include <allegro.h>
 #include <iostream>
 using namespace std;
 
 int main()
 {
-    allegro_init();
-    install_keyboard();
+    //allegro_init();
+    //install_keyboard();
 
-    Map M("maps/map1");
-    Player P;
-    M.place_player_random(&P);
+    //Map M("maps/map1");
+    //Player P;
+    //M.place_player_random(&P);
     //readkey();
     //while (keypressed);
   
-    set_color_depth(32);
+    //set_color_depth(32);
   
-    if (set_gfx_mode(GFX_AUTODETECT_WINDOWED, SCREEN_X, SCREEN_Y, 0, 0)) 
-    {
-        allegro_message("Video Error: %s.\n", allegro_error);
-        exit(1);
-    }
-    M.print_map();
+    //if (set_gfx_mode(GFX_AUTODETECT_WINDOWED, SCREEN_X, SCREEN_Y, 0, 0)) 
+    //{
+    //    allegro_message("Video Error: %s.\n", allegro_error);
+    //    exit(1);
+    //}
+    //M.print_map();
     
-    client_main();
+    server_main(); 
+    //client_main();
 
     /*
     while (1)
@@ -62,8 +64,6 @@ int main()
     M.move(&P, RIGHT);
     M.print_map();
     */
-
-
 
     return 0;   
 }

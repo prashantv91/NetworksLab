@@ -7,7 +7,7 @@ CFLAGS = -Wall -pedantic $(DEBUG)
 LDFLAGS = -L/home/arijit/usr/local/lib
 ALLEGROFLAGS = `allegro-config --cflags --libs`
 MACROS = 
-OBJS = position.o map.o player.o packet.o client.o
+OBJS = position.o map.o player.o packet.o client.o server.o globals.o
 
 all: test 
 
