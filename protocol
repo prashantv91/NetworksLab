@@ -1,0 +1,31 @@
+server                                  client
+compute map, positions
+                                        request 2 connections 
+accept 
+                                        sends char, name, type of packet 
+stores fd
+stores char, name in that id
+
+sends id++ to the type game 
+                                        receive id
+                                        create three threads
+
+cnt++
+---
+
+when cnt = N
+
+create 2*N threads 
+each thread gets conn_fd, game
+
+game threads:
+send the entire game object
+                                        receive the entire game object
+
+send game START
+
+----------------------------------------------------------------------------------
+
+
+Server needs: Player array, Map (Game object), array for each conn type
+Client needs: 
