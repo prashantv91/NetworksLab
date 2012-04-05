@@ -26,13 +26,18 @@
 enum direction {UP, LEFT, DOWN, RIGHT};
 enum pkt_type {TYPE_GAME, TYPE_CHAT, TYPE_BROADCAST, TYPE_REPLY, TYPE_START, TYPE_STOP, TYPE_MAP};
 #define PKT_MSG_SIZE 101
-
 #define FOR_EACH_DIR(dir)  for (direction dir = UP; dir <= RIGHT; dir++)
+
+
+/* Default values used by server */
+#define SERVER_UDP_PORT "2718" 
+#define SERVER_TCP_PORT "3142" 
+
+#define NUM_PLAYERS 2
 
 #define MAP_plain '.'
 #define MAP_wall '#'
 
-#define SERVER_UDP_PORT "2718"
 #define CLIENT_PORT "3141"
 #define BROADCAST_ADDRESS "255.255.255.255"
 

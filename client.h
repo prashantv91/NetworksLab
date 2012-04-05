@@ -35,7 +35,7 @@ void recv_players();
 void game_thread(void *args);
 void chat_thread(void *args);
 void keyboard(void *args);
-void client_main();
+int main();
 
 #endif
 

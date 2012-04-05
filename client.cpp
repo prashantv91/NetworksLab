@@ -155,8 +155,9 @@ void game_thread(void *args)
 
 }
 
-void chat_thread(void *args){}
-
+void chat_thread(void *args)
+{
+}
 
 void keyboard(void *args)
 {
@@ -204,10 +205,12 @@ void keyboard(void *args)
 }
 
 
-void client_main()
+int main()
 {
     Params params;
     //GAME_RUNNING = true;
     //keyboard(&params);
     client_init();
+
+    return 0;
 }
