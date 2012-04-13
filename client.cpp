@@ -13,6 +13,7 @@ using namespace std;
 
 extern bool game_running;
 extern Game game;
+bool game_won;
 pthread_mutex_t lock;
 
 void *get_in_addr(struct sockaddr *sa)
@@ -251,7 +252,7 @@ void draw_outline()
         
     rectfill(bmp, chat_startx, chat_starty, chat_startx+cw, chat_endy, white);
     rectfill(bmp, chat_startx, chat_endy-cw*(pcl+3), chat_endx+cw, chat_endy-cw*(pcl+2), white);
-//    rectfill(bmp, 
+    rectfill(bmp, 0, SCREEN_Y - cw*5, chat_startx, SCREEN_Y - cw*4, white);
 
     blit(bmp, screen, 0, 0, 0, 0, bmp->w, bmp->h);
     
@@ -285,23 +286,39 @@ Params client_init(char player_char, char player_name[])
     return params;
 
 }
-/*
+
 void* timer_fn(void *args)
 {
+    Params params = *(Params*)args;
+    
     while (!game_running);
 
+    int cw = CHAR_WIDTH;
     int time = game.time;
-    
+    char message[] = "Time till manatees";
+    int x = cw*(strlen(message) + 4);
+    int y = SCREEN_Y - 2*cw - cw/2;
 
-    while (time > 0)
+    textprintf_ex(screen, font, cw*2, y, green, -1, "%s: ", message);
+
+    while (time >= 0 && game_running)
     {
-        
+        rectfill(screen, x, y, x + cw*10, y + cw, black);
+        textprintf_ex(screen, font, x, y, red, -1, "%d", time);
+
+        sleep(1);
+        time--;
     }
+
+    
+    //pthread_cancel(params.chat_thread);
+    pthread_cancel(params.game_thread);
+    //pthread_cancel(params.chat_thread);
 
     return NULL;
 
 }
-*/
+
 void* game_fn(void *args)
 {
     Params params = *(Params*)(args);
@@ -331,6 +348,7 @@ for (int i = 0; i < game.num_players; i++)
     game_running = true;
     //pthread_mutex_lock(&lock);
 
+    game_won = false;
     game.map.draw_map();
 
     while (recv_packet(sockfd, &packet))
@@ -350,12 +368,20 @@ for (int i = 0; i < game.num_players; i++)
         }
         else
         if (packet.packet_type == TYPE_STOP)
+        {
+            if (*(bool*)(packet.message))
+                game_won = true;
+            else
+                game_won = false;
             break;
+        }
     }
 
     //pthread_mutex_lock(&lock);
     game_running = false;
     //pthread_mutex_unlock(&lock);
+    
+    //pthread_cancel(params.chat_thread);
 
 #ifdef DEBUG
     fprintf(stderr, "Game thread exiting.\n");
@@ -504,6 +530,9 @@ void* keyboard_fn(void *args)
     game_running = false;
     //pthread_mutex_unlock(&lock);
 
+    pthread_cancel(params.chat_thread);
+    pthread_cancel(params.game_thread);
+
 #ifdef DEBUG
     fprintf(stderr, "Keyboard thread exiting.\n");
 #endif
@@ -535,15 +564,26 @@ int main()
 
     params = client_init(player_char, player_name);
 
-    pthread_t game_thread, chat_thread, keyboard_thread;
     
-    pthread_create(&game_thread, NULL, &game_fn, (void*)&params);
-    pthread_create(&chat_thread, NULL, &chat_fn, (void*)&params);
-    pthread_create(&keyboard_thread, NULL, &keyboard_fn, (void*)&params);
+    pthread_create(&params.chat_thread, NULL, &chat_fn, (void*)&params);
+    pthread_create(&params.game_thread, NULL, &game_fn, (void*)&params);
+    pthread_create(&params.keyboard_thread, NULL, &keyboard_fn, (void*)&params);
+    pthread_create(&params.timer_thread, NULL, &timer_fn, (void*)&params);
 
-    pthread_join(game_thread, NULL);
-    pthread_join(chat_thread, NULL);
-    pthread_join(keyboard_thread, NULL);
+    pthread_join(params.game_thread, NULL);
+    
+    rectfill(screen, MAP_CHAR_WIDTH, MAP_CHAR_WIDTH, MAP_CHAR_WIDTH*(MAP_MAXX+3), MAP_CHAR_WIDTH*(MAP_MAXY+3), black);
+    if (game_won)
+        textprintf_centre_ex(screen, font, (MAP_CHAR_WIDTH*MAP_MAXX)/2, (MAP_CHAR_WIDTH*MAP_MAXY)/2, green, -1, "BIG SUCCESS!");
+    else
+        textprintf_centre_ex(screen, font, (MAP_CHAR_WIDTH*MAP_MAXX)/2, (MAP_CHAR_WIDTH*MAP_MAXY)/2, red, -1, "YOU FOR MISTAKE.");
+
+    pthread_join(params.chat_thread, NULL);
+    pthread_join(params.timer_thread, NULL);
+    pthread_join(params.keyboard_thread, NULL);
+
+    
+    while(!keypressed());
 
     fprintf(stderr, "EXITING.\n");
 

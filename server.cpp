@@ -16,6 +16,7 @@ struct Params
 }; 
 
 extern Game game; 
+bool server_game_running, game_won;
 Params chat_params[2*MAX_PLAYERS], game_params[2*MAX_PLAYERS]; 
 pthread_mutex_t chatLock, gameLock;                               // locks for sending information to client
 
@@ -231,6 +232,23 @@ void send_ids()
     game.map.print_map(); 
 }
 
+void* timer_fn(void *args)
+{
+    while (!server_game_running);
+
+    int time = GAME_DURATION;
+
+    while (time >= 0)
+    {
+        sleep(1);
+        time--;
+    }
+
+    server_game_running = false;
+
+    return NULL;
+}
+
 void *game_callback(void *args)
 {
     int conn_fd, ret; 
@@ -249,7 +267,9 @@ void *game_callback(void *args)
     packet.packet_type = TYPE_START;
     send(conn_fd, &packet, sizeof(packet), 0); 
     
-    while(1)
+    game_won = false;
+
+    while(server_game_running)
     {
             if(recv(conn_fd, &packet, sizeof(packet), 0) <= 0)
             {
@@ -274,6 +294,20 @@ void *game_callback(void *args)
             }
             game->map.print_map(); 
     }
+
+    packet.packet_type = TYPE_STOP;
+    if (game_won)
+        *(bool*)(packet.message) = true;
+    else
+        *(bool*)(packet.message) = false;
+    pthread_mutex_lock(&gameLock);
+    for(int i = 0; i < NUM_PLAYERS ; i++)
+        if(game_params[i].conn_fd != -1)
+            send(game_params[i].conn_fd, &packet, sizeof(packet), 0); 
+    pthread_mutex_unlock(&gameLock); 
+
+
+
 }
 
 bool filter(char *s)
@@ -289,7 +323,7 @@ void *chat_callback(void *args)
     
     conn_fd = params -> conn_fd; 
 
-    while(1)
+    while(server_game_running)
     {
             if(recv(conn_fd, &packet, sizeof(packet), 0) <= 0)
             {
@@ -310,6 +344,7 @@ void *chat_callback(void *args)
                     pthread_mutex_unlock(&chatLock); 
             }
     }
+
 }
 
 void receive_players()
@@ -347,13 +382,15 @@ void game_init()
     srand(time(0)); 
     game.map = Map("maps/map2"); 
     game.num_players = NUM_PLAYERS; 
+    game.time = GAME_DURATION;
     game.running = true; 
+    server_game_running = true;
 }
 
 void create_threads()
 {
     pthread_t *threadObj; 
-
+    pthread_t timer_thread;
     /* Create and start threads */
     threadObj = new pthread_t[2*NUM_PLAYERS];           
 
@@ -362,6 +399,7 @@ void create_threads()
             pthread_create(&threadObj[2*i], NULL, game_callback, (void *)(&game_params[i])); 
             pthread_create(&threadObj[2*i+1], NULL, chat_callback, (void *)(&chat_params[i])); 
     }
+    pthread_create(&timer_thread, NULL, &timer_fn, NULL);
 
     /* Wait for threads to finish */
     for(int i = 0; i < NUM_PLAYERS ; i++)
@@ -369,6 +407,7 @@ void create_threads()
             pthread_join(threadObj[2*i], NULL);
             pthread_join(threadObj[2*i+1], NULL);
     }
+    pthread_join(timer_thread, NULL);
 
     delete[] threadObj; 
 }
