@@ -94,7 +94,7 @@ void* chat_fn(void *args)
             player = game.players[packet.player_id];
             pack_chat(chatroll, roll_top, player.get_char(), player.get_name(), packet.message, num_chars_per_line, num_lines);
             draw_chat(chatroll, roll_top, chat_startx, chat_starty, num_chars_per_line, num_lines);
-            //printf("---CHAT--- %c%s: %s\n", player.get_char(), player.get_name(), packet.message);
+            printf("---CHAT--- %c%s: %s\n", player.get_char(), player.get_name(), packet.message);
         }
     }
 

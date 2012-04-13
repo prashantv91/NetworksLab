@@ -21,12 +21,11 @@
 #define MAP_CHAR_WIDTH 10
 #define PLAYER_CHAT_LINES 4
 
-#define GAME_DURATION 10
 #define MAP_MAXX 50
 #define MAP_MAXY 50
 #define MAX_PLAYERS 10
 
-#define GIVE_UP 10000
+#define GIVE_UP 100
 
 enum direction {UP, LEFT, DOWN, RIGHT};
 enum pkt_type {TYPE_GAME, TYPE_CHAT, TYPE_BROADCAST, TYPE_REPLY, TYPE_START, TYPE_STOP, TYPE_MAP};
