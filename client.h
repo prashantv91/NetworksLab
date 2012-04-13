@@ -19,21 +19,15 @@
 #include <allegro.h>
 #include "packet.h"
 #include "game.h"
+#include "params.h"
+#include "chat.h"
 
-
-struct Params
-{
-    int sockfd_game;
-    int sockfd_chat;
-    int player_id;
-};
 
 Params client_init();
 void recv_map();
 void recv_players();
 
 void* game_fn(void *args);
-void* chat_fn(void *args);
 void* keyboard_fn(void *args);
 int main();
 

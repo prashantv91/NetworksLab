@@ -11,8 +11,8 @@
 #include <bits/pthreadtypes.h>
 using namespace std;
 
-bool game_running;
-Game game;
+extern bool game_running;
+extern Game game;
 pthread_mutex_t lock;
 
 void *get_in_addr(struct sockaddr *sa)
@@ -232,6 +232,31 @@ int first_contact(Params params, char player_char, char player_name[])
     return packet.player_id;    
 }
 
+void draw_outline()
+{
+    BITMAP *bmp = create_bitmap(SCREEN_X, SCREEN_Y);
+
+    int mcw = MAP_CHAR_WIDTH, cw = CHAR_WIDTH;
+    int chat_startx = mcw*(MAP_MAXX + 4), chat_endx = SCREEN_X;
+    int chat_starty = 0, chat_endy = SCREEN_Y;
+    int pcl = PLAYER_CHAT_LINES;
+
+    cout<<"WHITE: "<<white<<' '<<makecol(128,0,128)<<endl;
+    
+
+    rectfill(bmp, 0, 0, cw, SCREEN_Y, white);
+    rectfill(bmp, 0, 0, SCREEN_X, cw, white);
+    rectfill(bmp, 0, SCREEN_Y-cw, SCREEN_X, SCREEN_Y, white);
+    rectfill(bmp, SCREEN_X-cw, 0, SCREEN_X, SCREEN_Y, white);
+        
+    rectfill(bmp, chat_startx, chat_starty, chat_startx+cw, chat_endy, white);
+    rectfill(bmp, chat_startx, chat_endy-cw*(pcl+3), chat_endx+cw, chat_endy-cw*(pcl+2), white);
+//    rectfill(bmp, 
+
+    blit(bmp, screen, 0, 0, 0, 0, bmp->w, bmp->h);
+    
+}
+
 Params client_init(char player_char, char player_name[])
 {
     /*
@@ -255,10 +280,28 @@ Params client_init(char player_char, char player_name[])
 
     params.player_id = first_contact(params, player_char, player_name);   
     
+    draw_outline();
+
     return params;
 
 }
+/*
+void* timer_fn(void *args)
+{
+    while (!game_running);
 
+    int time = game.time;
+    
+
+    while (time > 0)
+    {
+        
+    }
+
+    return NULL;
+
+}
+*/
 void* game_fn(void *args)
 {
     Params params = *(Params*)(args);
@@ -283,15 +326,15 @@ for (int i = 0; i < game.num_players; i++)
     {
         recv_packet(sockfd, &packet);
     } while (packet.packet_type != TYPE_START);
-
-    game.map.draw_map();
-
+    
     //pthread_mutex_lock(&lock);
     game_running = true;
     //pthread_mutex_lock(&lock);
 
+    game.map.draw_map();
+
     while (recv_packet(sockfd, &packet))
-    {cerr<<"GAME PACKET\n";
+    {
         //pthread_mutex_lock(&lock);
         if (!game_running)
             break;
@@ -321,43 +364,6 @@ for (int i = 0; i < game.num_players; i++)
     return NULL;
 }
 
-void* chat_fn(void *args)
-{
-    Params params = *(Params*)(args);
-    int sockfd = params.sockfd_chat;
-    Player player;
-    Packet packet;
-    int chat_startx = SCREEN_X - 8*MAP_MAXX - 16, chat_width = (SCREEN_X - chat_startx)/8;
-    int chat_starty = SCREEN_Y - 8*MAP_MAXY - 16, chat_height = (SCREEN_Y - chat_starty)/8;
-    char **chatroll;
-    
-    
-
-    while (recv_packet(sockfd, &packet))
-    {
-        //pthread_mutex_lock(&lock);
-        if (!game_running)
-            break;
-        //pthread_mutex_unlock(&lock);
-
-        if (packet.packet_type == TYPE_CHAT)
-        {
-            player = game.players[packet.player_id];
-            /**/printf("---CHAT--- %c%s: %s\n", player.get_char(), player.get_name(), packet.message);
-        }
-    }
-
-    //pthread_mutex_lock(&lock);
-    game_running = false;
-    //pthread_mutex_unlock(&lock);
-
-#ifdef DEBUG
-    fprintf(stderr, "Chat thread exiting.\n");
-#endif
-
-    return NULL;
-}
-
 void* keyboard_fn(void *args)
 {
 
@@ -370,6 +376,18 @@ void* keyboard_fn(void *args)
     }
     //pthread_mutex_unlock(&lock);
 
+    //BITMAP *bmp = create_bitmap(SCREEN_X, SCREEN_Y);
+    int cw = CHAR_WIDTH, mcw = MAP_CHAR_WIDTH, pcl = PLAYER_CHAT_LINES;
+    int chat_startx = mcw*(MAP_MAXX + 4), chat_endx = SCREEN_X;
+    int chat_starty = 0, chat_endy = SCREEN_Y;
+        
+    int num_chars_per_line = (chat_endx - chat_startx - 2*cw) / cw;
+    int num_lines = (chat_endy - chat_starty - (pcl+4)*cw) / cw;
+    
+    int pl_chat_startx = chat_startx + cw + cw/2, pl_chat_endx = chat_endx - cw - cw/2;
+    int pl_chat_starty = chat_endy - cw*(pcl+2) + cw/2, pl_chat_endy = chat_endy - cw - cw/2;
+    int pl_chat_x, pl_chat_y;
+    //rectfill(bmp, chat_startx, chat_endy-cw*(pcl+3), chat_endx+cw, chat_endy-cw*(pcl+2), white);
 
     Params params = *(Params*)(args);
     Packet game_pkt, chat_pkt;
@@ -384,6 +402,9 @@ void* keyboard_fn(void *args)
     chat_pkt.player_id = params.player_id;
     chat_pkt.packet_type = TYPE_CHAT;
     
+    pl_chat_x = pl_chat_startx;
+    pl_chat_y = pl_chat_starty;
+
     while (game_running)
     {
         while (!keypressed());
@@ -393,18 +414,57 @@ void* keyboard_fn(void *args)
 
             if (ch !='\n' && ch != '\r' && (chat_ind < PKT_MSG_SIZE-1))
             {
-                chat_pkt.message[chat_ind] = ch;
-                chat_ind++;
-#ifdef DEBUG
-                textprintf_ex(screen, font, chat_ind*8, 0, makecol(255, 100, 200), -1, "%c", ch);  //x and y interchanged due to differing conventions.
+                if (ch == '\b')
+                {
+                    if (pl_chat_x != pl_chat_startx || pl_chat_y != pl_chat_starty)
+                    {
+                        if (pl_chat_x != pl_chat_startx)
+                        {
+                            pl_chat_x -= cw;
+                        }
+                        else
+                        {
+                            pl_chat_x = pl_chat_endx - cw;
+                            pl_chat_y -= cw;
+                        }
+                        rectfill(screen, pl_chat_x, pl_chat_y, pl_chat_x+cw, pl_chat_y+cw, black);
+                    }
+                }
+                else
+                if (ch >= 32 && ch <= 126)
+                {
+                    chat_pkt.message[chat_ind] = ch;
+                    chat_ind++;
+                    textprintf_ex(screen, font, pl_chat_x, pl_chat_y, light_green, -1, "%c", ch);  //x and y interchanged due to differing conventions.
+
+                    pl_chat_x += cw;
+                    if (pl_chat_x >= pl_chat_endx)
+                    {
+                        pl_chat_x = pl_chat_startx;
+                        pl_chat_y += cw;
+                        if (pl_chat_y >= pl_chat_starty + pcl*cw)
+                        {
+                            chat_pkt.message[chat_ind] = 0;
+                            chat_ind = 0;
+                            pl_chat_x = pl_chat_startx;
+                            pl_chat_y = pl_chat_starty;
+                            rectfill(screen, pl_chat_startx, pl_chat_starty, pl_chat_endx, pl_chat_endy, black);
+
+                            send_packet(params.sockfd_chat, &chat_pkt);
+
+                        }
+                    }
+                }
                 //cerr<<s<<endl;
-#endif
             }
             else
             {
                 chat_pkt.message[chat_ind] = 0;
                 chat_ind = 0;
-
+                pl_chat_x = pl_chat_startx;
+                pl_chat_y = pl_chat_starty;
+                rectfill(screen, pl_chat_startx, pl_chat_starty, pl_chat_endx, pl_chat_endy, black);
+               
                 send_packet(params.sockfd_chat, &chat_pkt);
             }
             

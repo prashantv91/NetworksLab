@@ -15,7 +15,7 @@ struct Params
         Game *game;
 }; 
 
-Game game; 
+extern Game game; 
 Params chat_params[2*MAX_PLAYERS], game_params[2*MAX_PLAYERS]; 
 pthread_mutex_t chatLock, gameLock;                               // locks for sending information to client
 
@@ -345,7 +345,7 @@ void server_init()
 void game_init()
 {
     srand(time(0)); 
-    game.map = Map("maps/map1"); 
+    game.map = Map("maps/map2"); 
     game.num_players = NUM_PLAYERS; 
     game.running = true; 
 }

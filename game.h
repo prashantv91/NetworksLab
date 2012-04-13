@@ -15,6 +15,7 @@ struct Game
     int num_players;
     Map map;
     Player players[MAX_PLAYERS];  
+    int time;
 };
 
 #endif

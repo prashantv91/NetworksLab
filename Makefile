@@ -4,10 +4,10 @@ OBJECT_FILES := ${FILE_NAMES:.cpp=.o}
 CPP = g++
 DEBUG = -g
 CFLAGS = -Wall -pedantic $(DEBUG)
-LDFLAGS = -L/home/arijit/usr/local/lib
+LDFLAGS = #-L/home/prashantv/usr/local/lib
 ALLEGROFLAGS = `allegro-config --cflags --libs`
 MACROS = 
-OBJS = position.o map.o player.o packet.o
+OBJS = globals.o position.o map.o player.o packet.o chat.o
 
 all: client server
 
@@ -20,8 +20,8 @@ client: $(OBJS) client.o
 server: $(OBJS) server.o
 	$(CPP) $(OBJS) server.o $(LDFLAGS) $(ALLEGROFLAGS) -o server.out
 
-%.o: %.cpp
-	$(CPP) $(ALLEGROFLAGS) $(LDFLAGS) -c $^ -o $@
+%.o: %.cpp %.h constants.h
+	$(CPP) $(ALLEGROFLAGS) $(LDFLAGS) -c $< -o $@
 
 .PHONY: clean
 

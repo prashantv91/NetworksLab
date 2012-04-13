@@ -171,24 +171,19 @@ void Map::print_map()
 
 void Map::draw_map()
 {
-    if (false)//(get_gfx_mode() == GFX_TEXT)          //How to find current graphics mode?!
-    {
-        REP(x, MAP_MAXX)
-        {
-            REP(y, MAP_MAXY)
-                cout<<map[x][y];
-            cout<<endl;
-        }
-        cout<<endl;
-    }
-    else
-    {
-        rectfill(screen, 0, 0, MAP_MAXY*10, MAP_MAXX*10, makecol(0,0,0) );
-        //clear_bitmap(screen);
-        REP(x, MAP_MAXX)
-            REP(y, MAP_MAXY)
-                textprintf_ex(screen, font, (y+1)*10, (x+1)*10, makecol(255, 100, 200), -1, "%c", map[x][y]);  //x and y interchanged due to differing conventions.
-    }
+    int mcw = MAP_CHAR_WIDTH;
+    int map_startx = mcw, map_height = mcw*(MAP_MAXX+1);
+    int map_starty = mcw, map_width = mcw*(MAP_MAXY+1);
+    BITMAP *bmp = create_bitmap(SCREEN_X, SCREEN_Y);
+
+    //rectfill(screen, 0, 0, MAP_MAXY*10, MAP_MAXX*10, makecol(0,0,0) );
+    //clear_bitmap(screen);
+    REP(x, MAP_MAXX)
+        REP(y, MAP_MAXY)
+            textprintf_ex(bmp, font, (y+1)*mcw, (x+1)*mcw, light_green, -1, "%c", map[x][y]);  //x and y interchanged due to differing conventions.
+
+    blit(bmp, screen, 0, 0, map_starty, map_startx, map_width, map_height);
+
     return;
 }
 
