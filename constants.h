@@ -17,11 +17,12 @@
 #define SCREEN_X 640
 #define SCREEN_Y 480
 
-#define MAP_MAXX 10
-#define MAP_MAXY 10
+#define MAP_MAXX 50
+#define MAP_MAXY 50
 #define MAX_PLAYERS 10
+#define DIST_VIS 2
 
-#define GIVE_UP 100
+#define GIVE_UP 10000
 
 enum direction {UP, LEFT, DOWN, RIGHT};
 enum pkt_type {TYPE_GAME, TYPE_CHAT, TYPE_BROADCAST, TYPE_REPLY, TYPE_START, TYPE_STOP, TYPE_MAP};
@@ -33,7 +34,7 @@ enum pkt_type {TYPE_GAME, TYPE_CHAT, TYPE_BROADCAST, TYPE_REPLY, TYPE_START, TYP
 #define SERVER_UDP_PORT "2718" 
 #define SERVER_TCP_PORT "3142" 
 
-#define NUM_PLAYERS 3
+#define NUM_PLAYERS 2
 
 #define MAP_plain '.'
 #define MAP_wall '#'

@@ -25,7 +25,3 @@ send the entire game object
 send game START
 
 ----------------------------------------------------------------------------------
-
-
-Server needs: Player array, Map (Game object), array for each conn type
-Client needs: 

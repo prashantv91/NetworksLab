@@ -32,10 +32,10 @@ Params client_init();
 void recv_map();
 void recv_players();
 
-void* game_fn(void *args);
-void* chat_fn(void *args);
-void* keyboard_fn(void *args);
-int main();
+void* game_fn(void *);
+void* chat_fn(void *);
+void* keyboard_fn(void *);
+int main(int, char **);
 
 #endif
 
