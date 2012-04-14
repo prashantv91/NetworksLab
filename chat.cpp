@@ -91,8 +91,8 @@ void* chat_fn(void *args)
     while (recv_packet(sockfd, &packet))
     {
         //pthread_mutex_lock(&lock);
-        if (!game_running)
-            break;
+        //if (!game_running)
+        //    break;
         //pthread_mutex_unlock(&lock);
 
         if (packet.packet_type == TYPE_CHAT)

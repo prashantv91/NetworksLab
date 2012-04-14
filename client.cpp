@@ -470,7 +470,8 @@ void* keyboard_fn(void *args)
     pl_chat_x = pl_chat_startx;
     pl_chat_y = pl_chat_starty;
 
-    while (game_running)
+    //while (game_running)
+    while(1)
     {
         while (!keypressed());
         ch = readkey() % 256;

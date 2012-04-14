@@ -24,8 +24,8 @@
 #define PLAYER_CHAT_LINES 4
 
 #define GAME_DURATION 200
-#define MAP_MAXX 50
-#define MAP_MAXY 50
+#define MAP_MAXX 65
+#define MAP_MAXY 65
 #define MAX_PLAYERS 10
 #define DIST_VIS 2
 

@@ -338,7 +338,8 @@ void *chat_callback(void *args)
     
     conn_fd = params -> conn_fd; 
 
-    while(server_game_running)
+    //while(server_game_running)
+    while(1)
     {
             if(recv(conn_fd, &packet, sizeof(packet), 0) <= 0)
             {
