@@ -7,20 +7,23 @@ CFLAGS = -Wall -pedantic $(DEBUG)
 LDFLAGS = #-L/home/prashantv/usr/local/lib
 ALLEGROFLAGS = `allegro-config --cflags --libs`
 MACROS = 
-OBJS = globals.o position.o map.o player.o packet.o chat.o
+OBJS = globals.o position.o map.o player.o packet.o chat.o mask.o
 
 all: client server
 
 test: $(OBJS) test.o
 	$(CPP) $(OBJS) test.o $(LDFLAGS) $(ALLEGROFLAGS) -o test.out
 
-client: $(OBJS) client.o
+client: $(OBJS) client.o 
 	$(CPP) $(OBJS) client.o $(LDFLAGS) $(ALLEGROFLAGS) -o client.out
 
 server: $(OBJS) server.o
 	$(CPP) $(OBJS) server.o $(LDFLAGS) $(ALLEGROFLAGS) -o server.out
 
-%.o: %.cpp %.h constants.h
+map.o: map.cpp mask.h constants.h
+	$(CPP) $(ALLEGROFLAGS) $(LDFLAGS) -c $< -o $@
+
+%.o: %.cpp constants.h
 	$(CPP) $(ALLEGROFLAGS) $(LDFLAGS) -c $< -o $@
 
 .PHONY: clean

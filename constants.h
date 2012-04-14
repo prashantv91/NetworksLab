@@ -25,6 +25,7 @@
 #define MAP_MAXX 50
 #define MAP_MAXY 50
 #define MAX_PLAYERS 10
+#define DIST_VIS 2
 
 #define GIVE_UP 10000
 

@@ -14,7 +14,9 @@ using namespace std;
 extern bool game_running;
 extern Game game;
 bool game_won;
+Mask mask[NUM_PLAYERS]; 
 pthread_mutex_t lock;
+
 
 void *get_in_addr(struct sockaddr *sa)
 {
@@ -212,7 +214,7 @@ int first_contact(Params params, char player_char, char player_name[])
     send_packet(sockfd, &packet);
 
 #ifdef DEBUG
-    fprintf(stderr, "Sent identificaiton for chat line.\n");
+    fprintf(stderr, "Sent identification for chat line.\n");
 #endif
     
     sockfd = params.sockfd_game;
@@ -220,7 +222,7 @@ int first_contact(Params params, char player_char, char player_name[])
     send_packet(sockfd, &packet);
 
 #ifdef DEBUG
-    fprintf(stderr, "Sent identificaiton for game line.\n");
+    fprintf(stderr, "Sent identification for game line.\n");
     fprintf(stderr, "Sent character \'%c\', name \"%s\".\n", player_char, player_name);
 #endif
 
@@ -323,7 +325,8 @@ void* game_fn(void *args)
 {
     Params params = *(Params*)(args);
     int sockfd = params.sockfd_game;
-    int numbytes;
+    int myId = params.player_id; 
+    int numbytes, moveId;
     direction dir;
     Player *player;
     Packet packet;
@@ -344,6 +347,10 @@ for (int i = 0; i < game.num_players; i++)
         recv_packet(sockfd, &packet);
     } while (packet.packet_type != TYPE_START);
     
+
+    mask[myId].update(game.players[myId].get_pos().x, game.players[myId].get_pos().y); 
+    game.map.draw_map(&mask[myId], game.players[myId].get_pos().x, game.players[myId].get_pos().y);
+
     //pthread_mutex_lock(&lock);
     game_running = true;
     //pthread_mutex_lock(&lock);
@@ -361,9 +368,23 @@ for (int i = 0; i < game.num_players; i++)
         if (packet.packet_type == TYPE_GAME)
         {
             dir = *(direction*)(packet.message);
-            player = &(game.players[packet.player_id]);
+            moveId = packet.player_id; 
+            player = &(game.players[moveId]);
+
             game.map.move(player, dir);
-            game.map.draw_map();
+
+            // update mask for player who moved
+            mask[moveId].update(game.players[moveId].get_pos().x, game.players[moveId].get_pos().y); 
+
+            // check for adjacent players and update map
+            for(int i = 0 ; i < game.num_players; i++)
+                    if(abs(game.players[i].get_pos().x - game.players[moveId].get_pos().x) + \
+                       abs(game.players[i].get_pos().y - game.players[moveId].get_pos().y) == 1)
+                            mask[moveId].exchange(&mask[i]); 
+
+
+            // show my map
+            game.map.draw_map(&mask[myId], game.players[myId].get_pos().x, game.players[myId].get_pos().y);
             //game.map.print_map();
         }
         else
@@ -552,11 +573,19 @@ void start_allegro()
     }
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     Params params;
-    char player_char = '@';
-    char player_name[] = "gilmagunaa";
+    char player_char;
+    char player_name[PLAYER_NAME_SIZE]; 
+    
+    if(argc != 3)
+    {
+            cout<<"Error. Usage: ./client [PLAYER_CHAR] [PLAYER_NAME]";
+            return 1;
+    }
+    player_char = *argv[1]; 
+    strcmp(player_name, argv[2]);
     
     start_allegro();    
         

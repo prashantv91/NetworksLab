@@ -380,7 +380,7 @@ void server_init()
 void game_init()
 {
     srand(time(0)); 
-    game.map = Map("maps/map2"); 
+    game.map = Map(35, 35); 
     game.num_players = NUM_PLAYERS; 
     game.time = GAME_DURATION;
     game.running = true; 
