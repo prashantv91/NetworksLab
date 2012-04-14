@@ -369,8 +369,6 @@ for (int i = 0; i < game.num_players; i++)
         recv_packet(sockfd, &packet);
     } while (packet.packet_type != TYPE_START);
     
-
-
     //pthread_mutex_lock(&lock);
     game_running = true;
     //pthread_mutex_lock(&lock);

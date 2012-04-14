@@ -158,7 +158,7 @@ bool Map::safe(Position pos)
         return false;
     if (pos.y < 0 || pos.y >= MAP_MAXY)
         return false;
-    if (map[pos.x][pos.y] != MAP_plain)
+    if (map[pos.x][pos.y] != MAP_plain && map[pos.x][pos.y] != MAP_exit)
         return false;
 
     return true;
@@ -174,22 +174,25 @@ bool Map::check_map(char m[MAP_MAXX][MAP_MAXY])
     return true;
 }
 
+bool Map::isAtExit(int posx, int posy)
+{
+        return map[posx][posy] == MAP_exit; 
+}
+
 bool Map::move(Player* player, direction dir)
 {
     Position pos = player->get_pos(), new_pos;
     char pl_char = player->get_char();
 
-    if (map[pos.x][pos.y] != pl_char)          //If player object is lying about its position, abort.
-    {
-        return false;
-    }
     new_pos = pos;
     new_pos.move(dir);
     if (!safe(new_pos))
         return false;
 
     map[pos.x][pos.y] = map_original[pos.x][pos.y];
-    map[new_pos.x][new_pos.y] = pl_char;
+    if(map_original[new_pos.x][new_pos.y] != MAP_exit)
+            map[new_pos.x][new_pos.y] = pl_char;
+
     player->move(dir);
 
     return true;
@@ -217,7 +220,8 @@ void Map::draw_map(Mask *mask, int posx, int posy)
     //clear_bitmap(screen);
     REP(x, MAP_MAXX)
         REP(y, MAP_MAXY)
-                if((mask -> getvis(x, y)) && (map[x][y] == '.' || map[x][y] == '#' || (abs(x-posx) <= DIST_VIS && abs(y-posy) <= DIST_VIS)))
+                if((mask -> getvis(x, y)) && (map[x][y] == MAP_plain || map[x][y] == MAP_wall || map[x][y] != MAP_exit \
+                                        || (abs(x-posx) <= DIST_VIS && abs(y-posy) <= DIST_VIS)))
                         textprintf_ex(bmp, font, (y+1)*mcw, (x+1)*mcw, light_green, -1, "%c", map[x][y]);  
                 else if(mask -> getvis(x, y))
                         textprintf_ex(bmp, font, (y+1)*mcw, (x+1)*mcw, light_green, -1, ".");  
@@ -262,6 +266,27 @@ void Map::place_player_random(Player* pl)
     place_player(pl, pos);
 
 }
+
+void Map::place_exit()
+{
+    Position pos;
+    int give_up_count = GIVE_UP;
+    while (1)
+    {
+        pos.x = random()%MAP_MAXX;
+        pos.y = random()%MAP_MAXY;
+        if (safe(pos))
+            break;
+        give_up_count--;
+        if (give_up_count == 0)
+        {
+            fprintf(stderr, "Map::place_exit: Couldn't find place for exit. You shall not escape!\n");
+            return;
+        }
+    }
+    map_original[pos.x][pos.y] = map[pos.x][pos.y] = MAP_exit; 
+}
+
 
 void Map::init_shapes()
 {
@@ -322,7 +347,7 @@ void Map::choose_posn(int& x, int& y)
                     int tx = x1 + dx[k];
                     int ty = y1 + dy[k]; 
                     if(!check(tx, ty)) continue; 
-                    if(map[tx][ty] == '#' && iter > 0) continue; 
+                    if(map[tx][ty] == MAP_wall && iter > 0) continue; 
 
                     x = x1;
                     y = y1;
@@ -345,7 +370,7 @@ int Map::fill_map()
         {
                 int tx = x + shapes[i][j].first;
                 int ty = y + shapes[i][j].second;  
-                if(!check(tx, ty) || map[tx][ty] == '.')
+                if(!check(tx, ty) || map[tx][ty] == MAP_plain)
                 {
                         f = false;
                         break;
@@ -361,7 +386,7 @@ int Map::fill_map()
                 {
                         int tx = x + shapes[i][j].first;
                         int ty = y + shapes[i][j].second; 
-                        map[tx][ty] = '.'; 
+                        map[tx][ty] = MAP_plain; 
                 }
         }
         return covered_area; 

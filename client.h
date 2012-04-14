@@ -23,7 +23,6 @@
 #include "chat.h"
 
 
-Params client_init();
 void recv_map();
 void recv_players();
 

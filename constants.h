@@ -45,6 +45,7 @@ enum pkt_type {TYPE_GAME, TYPE_CHAT, TYPE_BROADCAST, TYPE_REPLY, TYPE_START, TYP
 
 #define MAP_plain '.'
 #define MAP_wall '#'
+#define MAP_exit '*'
 
 #define CLIENT_PORT "3141"
 #define BROADCAST_ADDRESS "255.255.255.255"
