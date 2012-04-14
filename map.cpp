@@ -147,6 +147,7 @@ Map::Map(char filename[])
 
 Map::~Map()
 {
+    shapes.clear();
 }
 
 /* Functions */

@@ -19,6 +19,7 @@ extern Game game;
 bool server_game_running, game_won;
 Params chat_params[2*MAX_PLAYERS], game_params[2*MAX_PLAYERS]; 
 pthread_mutex_t chatLock, gameLock;                               // locks for sending information to client
+int NUM_PLAYERS, CURR_MAX_PLAYERS;
 
 int fds[2*MAX_PLAYERS]; 
 int backlog = 5*MAX_PLAYERS;                                      // number of pending connections
@@ -350,15 +351,31 @@ void *chat_callback(void *args)
 void receive_players()
 {
     int sockfd_udp, sockfd_tcp, cnt = 0;
+    int prev, idle_cnt;
+
 
     create_socket(&sockfd_udp, SERVER_UDP_PORT, 0); 
     create_socket(&sockfd_tcp, SERVER_TCP_PORT, 1); 
+
+    prev = cnt;
+    idle_cnt = 0;
 
     while(1)
     {
         check_broadcast(sockfd_udp); 
         check_connection(sockfd_tcp, &cnt); 
-        if(cnt == 2*NUM_PLAYERS)
+        NUM_PLAYERS = cnt/2;
+        
+        if (prev == cnt)
+            idle_cnt++;
+        else
+            idle_cnt = 0;
+        prev = cnt;
+
+        if (idle_cnt > SERVER_WAIT_TIME * 30)
+            break;
+        
+        if(cnt == 2*CURR_MAX_PLAYERS)
             break;
     }
 }
@@ -381,7 +398,7 @@ void game_init()
 {
     srand(time(0)); 
     game.map = Map(35, 35); 
-    game.num_players = NUM_PLAYERS; 
+    game.num_players = MAX_PLAYERS; 
     game.time = GAME_DURATION;
     game.running = true; 
     server_game_running = true;
@@ -412,8 +429,23 @@ void create_threads()
     delete[] threadObj; 
 }
 
-int main()
+int main(int argc, char **argv)
 {
+    
+    if(argc != 2)
+    {
+            cout<<"Usage: ./server MAX_PLAYERS\n";
+            return 1;
+    }
+
+    CURR_MAX_PLAYERS = atoi(argv[1]);
+
+    if (CURR_MAX_PLAYERS > MAX_PLAYERS)
+    {
+        fprintf(stderr, "Can accommodate only %d players.\n", MAX_PLAYERS);
+        CURR_MAX_PLAYERS = MAX_PLAYERS;
+    }
+
     game_init(); 
     server_init(); 
     receive_players(); 

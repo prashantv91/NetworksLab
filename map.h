@@ -6,7 +6,7 @@
 #include "constants.h"
 #include "position.h"
 #include "mask.h"
-
+//using namespace std;
 //        y
 //    *--->
 //    |

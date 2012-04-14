@@ -9,12 +9,13 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <bits/pthreadtypes.h>
+#include <sys/select.h>
 using namespace std;
 
 extern bool game_running;
 extern Game game;
 bool game_won;
-Mask mask[NUM_PLAYERS]; 
+Mask mask[MAX_PLAYERS]; 
 pthread_mutex_t lock;
 
 
@@ -244,8 +245,6 @@ void draw_outline()
     int chat_starty = 0, chat_endy = SCREEN_Y;
     int pcl = PLAYER_CHAT_LINES;
 
-    cout<<"WHITE: "<<white<<' '<<makecol(128,0,128)<<endl;
-    
 
     rectfill(bmp, 0, 0, cw, SCREEN_Y, white);
     rectfill(bmp, 0, 0, SCREEN_X, cw, white);
@@ -274,11 +273,34 @@ Params client_init(char player_char, char player_name[])
     sockaddr_storage sock;
     char *server_port, *server_addr;
     socklen_t addrlen = sizeof(sock);
-
-    udp_sockfd = get_udp_broadcast_socket();
-    broadcast_it(udp_sockfd);
-    get_server_tcp_port(udp_sockfd, server_addr, server_port, addrlen, sock);
     
+    fd_set rfds;
+    struct timeval tv;
+    int timecheck;
+    
+    
+    while (1)
+    {
+        udp_sockfd = get_udp_broadcast_socket();
+        
+        FD_ZERO(&rfds);
+        FD_SET(udp_sockfd, &rfds);
+
+        tv.tv_sec = UDP_TIME_OUT;
+        tv.tv_usec = 0;
+
+
+        broadcast_it(udp_sockfd);
+        timecheck = select(udp_sockfd + 1, &rfds, NULL, NULL, &tv);
+
+        if (timecheck)
+            break;
+        else
+            close(udp_sockfd);
+    }
+
+    get_server_tcp_port(udp_sockfd, server_addr, server_port, addrlen, sock);
+
     get_connections(server_addr, server_port, params);
 
     params.player_id = first_contact(params, player_char, player_name);   
@@ -348,15 +370,14 @@ for (int i = 0; i < game.num_players; i++)
     } while (packet.packet_type != TYPE_START);
     
 
-    mask[myId].update(game.players[myId].get_pos().x, game.players[myId].get_pos().y); 
-    game.map.draw_map(&mask[myId], game.players[myId].get_pos().x, game.players[myId].get_pos().y);
 
     //pthread_mutex_lock(&lock);
     game_running = true;
     //pthread_mutex_lock(&lock);
 
     game_won = false;
-    game.map.draw_map();
+    mask[myId].update(game.players[myId].get_pos().x, game.players[myId].get_pos().y); 
+    game.map.draw_map(&mask[myId], game.players[myId].get_pos().x, game.players[myId].get_pos().y);
 
     while (recv_packet(sockfd, &packet))
     {
@@ -581,11 +602,11 @@ int main(int argc, char *argv[])
     
     if(argc != 3)
     {
-            cout<<"Error. Usage: ./client [PLAYER_CHAR] [PLAYER_NAME]";
+            cout<<"Usage: ./client [PLAYER_CHAR] [PLAYER_NAME]\n";
             return 1;
     }
     player_char = *argv[1]; 
-    strcmp(player_name, argv[2]);
+    strcpy(player_name, argv[2]);
     
     start_allegro();    
         

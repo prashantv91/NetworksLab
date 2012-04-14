@@ -28,7 +28,6 @@
 
 void sigchld_handler(int);
 void server_init(); 
-int main(); 
 void create_socket(int *, char *, int); 
 void receive_players(); 
 void check_broadcast(); 

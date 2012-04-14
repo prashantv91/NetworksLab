@@ -14,6 +14,8 @@
 #define REP(a, b)  for (int a = 0; a < int(b); a++)
 #define debug(x) cerr<<#x
 
+#define UDP_TIME_OUT 5
+
 #define SCREEN_X 800
 #define SCREEN_Y 600
 
@@ -21,7 +23,7 @@
 #define MAP_CHAR_WIDTH 10
 #define PLAYER_CHAT_LINES 4
 
-#define GAME_DURATION 10
+#define GAME_DURATION 100
 #define MAP_MAXX 50
 #define MAP_MAXY 50
 #define MAX_PLAYERS 10
@@ -38,8 +40,8 @@ enum pkt_type {TYPE_GAME, TYPE_CHAT, TYPE_BROADCAST, TYPE_REPLY, TYPE_START, TYP
 /* Default values used by server */
 #define SERVER_UDP_PORT "2718" 
 #define SERVER_TCP_PORT "3142" 
-
-#define NUM_PLAYERS 2
+#define SERVER_WAIT_TIME 5
+//#define NUM_PLAYERS 2
 
 #define MAP_plain '.'
 #define MAP_wall '#'
