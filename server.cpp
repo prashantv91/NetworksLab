@@ -241,7 +241,7 @@ void* timer_fn(void *args)
 
     int time = GAME_DURATION;
 
-    while (time >= 0)
+    while (time >= 0 && server_game_running)
     {
         sleep(1);
         time--;

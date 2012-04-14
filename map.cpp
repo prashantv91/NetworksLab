@@ -222,7 +222,18 @@ void Map::draw_map(Mask *mask, int posx, int posy)
         REP(y, MAP_MAXY)
                 if((mask -> getvis(x, y)) && (map[x][y] == MAP_plain || map[x][y] == MAP_wall || map[x][y] != MAP_exit \
                                         || (abs(x-posx) <= DIST_VIS && abs(y-posy) <= DIST_VIS)))
+                {
+                    if (map[x][y] == MAP_plain)
                         textprintf_ex(bmp, font, (y+1)*mcw, (x+1)*mcw, light_green, -1, "%c", map[x][y]);  
+                    else
+                    if (map[x][y] == MAP_wall)
+                        textprintf_ex(bmp, font, (y+1)*mcw, (x+1)*mcw, brown, -1, "%c", map[x][y]);  
+                    else
+                    if (map[x][y] == MAP_exit)
+                        textprintf_ex(bmp, font, (y+1)*mcw, (x+1)*mcw, red, -1, "%c", map[x][y]);  
+                    else
+                        textprintf_ex(bmp, font, (y+1)*mcw, (x+1)*mcw, map[x][y]<<4, -1, "%c", map[x][y]);  
+                }
                 else if(mask -> getvis(x, y))
                         textprintf_ex(bmp, font, (y+1)*mcw, (x+1)*mcw, light_green, -1, ".");  
 

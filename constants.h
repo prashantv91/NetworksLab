@@ -16,14 +16,14 @@
 
 #define UDP_TIME_OUT 5
 
-#define SCREEN_X 800
-#define SCREEN_Y 600
+#define SCREEN_X 1024
+#define SCREEN_Y 768
 
 #define CHAR_WIDTH 9
 #define MAP_CHAR_WIDTH 10
 #define PLAYER_CHAT_LINES 4
 
-#define GAME_DURATION 100
+#define GAME_DURATION 200
 #define MAP_MAXX 50
 #define MAP_MAXY 50
 #define MAX_PLAYERS 10
@@ -47,6 +47,9 @@ enum pkt_type {TYPE_GAME, TYPE_CHAT, TYPE_BROADCAST, TYPE_REPLY, TYPE_START, TYP
 #define MAP_wall '#'
 #define MAP_exit '*'
 
+#define MAP_plain_colour
+
+
 #define CLIENT_PORT "3141"
 #define BROADCAST_ADDRESS "255.255.255.255"
 
@@ -66,6 +69,8 @@ enum pkt_type {TYPE_GAME, TYPE_CHAT, TYPE_BROADCAST, TYPE_REPLY, TYPE_START, TYP
 #define pink        makecol( 255, 128, 128 )
 #define light_green makecol( 128, 255, 128 )
 #define dark_purple makecol( 128, 0,   128 )
+#define brown       makecol( 150, 75,  0   )
+#define gold        makecol( 224, 113, 0   )
 
 #endif
 

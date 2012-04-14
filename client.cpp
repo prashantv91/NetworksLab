@@ -246,14 +246,14 @@ void draw_outline()
     int pcl = PLAYER_CHAT_LINES;
 
 
-    rectfill(bmp, 0, 0, cw, SCREEN_Y, white);
-    rectfill(bmp, 0, 0, SCREEN_X, cw, white);
-    rectfill(bmp, 0, SCREEN_Y-cw, SCREEN_X, SCREEN_Y, white);
-    rectfill(bmp, SCREEN_X-cw, 0, SCREEN_X, SCREEN_Y, white);
+    rectfill(bmp, 0, 0, cw, SCREEN_Y, light_blue);
+    rectfill(bmp, 0, 0, SCREEN_X, cw, light_blue);
+    rectfill(bmp, 0, SCREEN_Y-cw, SCREEN_X, SCREEN_Y, light_blue);
+    rectfill(bmp, SCREEN_X-cw, 0, SCREEN_X, SCREEN_Y, light_blue);
         
-    rectfill(bmp, chat_startx, chat_starty, chat_startx+cw, chat_endy, white);
-    rectfill(bmp, chat_startx, chat_endy-cw*(pcl+3), chat_endx+cw, chat_endy-cw*(pcl+2), white);
-    rectfill(bmp, 0, SCREEN_Y - cw*5, chat_startx, SCREEN_Y - cw*4, white);
+    rectfill(bmp, chat_startx, chat_starty, chat_startx+cw, chat_endy, light_blue);
+    rectfill(bmp, chat_startx, chat_endy-cw*(pcl+3), chat_endx+cw, chat_endy-cw*(pcl+2), light_blue);
+    rectfill(bmp, 0, SCREEN_Y - cw*5, chat_startx, SCREEN_Y - cw*4, light_blue);
 
     blit(bmp, screen, 0, 0, 0, 0, bmp->w, bmp->h);
     
@@ -323,12 +323,12 @@ void* timer_fn(void *args)
     int x = cw*(strlen(message) + 4);
     int y = SCREEN_Y - 2*cw - cw/2;
 
-    textprintf_ex(screen, font, cw*2, y, green, -1, "%s: ", message);
+    textprintf_ex(screen, font, cw*2, y, yellow, -1, "%s: ", message);
 
     while (time >= 0 && game_running)
     {
         rectfill(screen, x, y, x + cw*10, y + cw, black);
-        textprintf_ex(screen, font, x, y, red, -1, "%d", time);
+        textprintf_ex(screen, font, x, y, gold, -1, "%d", time);
 
         sleep(1);
         time--;
@@ -358,8 +358,7 @@ void* game_fn(void *args)
         perror("Client::game_fn(): recv");
         return NULL;
     }
-for (int i = 0; i < game.num_players; i++)
-    cerr<<game.players[i].get_pos().x<<' '<<game.players[i].get_pos().y<<endl;
+
 #ifdef DEBUG
     fprintf(stderr, "Received game. %d bytes. Number of players: %d.\n", numbytes, game.num_players);
 #endif

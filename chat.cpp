@@ -47,16 +47,21 @@ void draw_chat(char **chatroll, int top, int chat_startx, int chat_starty, int n
 {
     int cw = CHAR_WIDTH;
     BITMAP *bmp = create_bitmap(SCREEN_X, SCREEN_Y);
-    int colour = red;//rand()%256;
+    int colour;//rand()%256;
 
     FOR(i, 0, num_lines)
+    {
+        if (chatroll[(top+i)%num_lines][0] == '(' && chatroll[(top+i)%num_lines][2] == ')')
+            colour = makecol(200+random()%56, 200+random()%56, 200+random()%56);
         FOR(j, 0, num_chars_per_line)
         {
             if (!chatroll[(top+i)%num_lines][j])
                 break;
+           
+
             textprintf_ex(bmp, font, chat_startx + cw*(j+2), chat_starty + cw*(i+1), colour, -1, "%c", chatroll[(top+i)%num_lines][j]);  //x and y interchanged due to differing conventions.
         }
-    
+    }
     blit(bmp, screen, chat_startx + 2*cw, chat_starty + cw, chat_startx + cw + cw/2, chat_starty + cw, cw*num_chars_per_line, cw*num_lines);
 }
 
