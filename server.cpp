@@ -22,6 +22,8 @@ pthread_mutex_t chatLock, gameLock;                               // locks for s
 
 int fds[2*MAX_PLAYERS]; 
 int backlog = 5*MAX_PLAYERS;                                      // number of pending connections
+int finished[MAX_PLAYERS];
+int num_finished; 
 
 void sigchld_handler(int s)
 {
@@ -281,10 +283,22 @@ void *game_callback(void *args)
 
             dir = *(direction *) packet.message; 
             printf("Server: Received keystroke from player %d saying go in direction '%d'\n", packet.player_id, dir); 
-
+            
+            if(finished[packet.player_id])
+                    printf("Server: Player %d has already reached the exit. Ignoring move.\n"); 
             //cout<<(game->players[packet.player_id]).get_pos().x<<" "<<(game->players[packet.player_id]).get_pos().y<<" "<<dir<<endl;
-            if((game->map).move(&(game->players[packet.player_id]), dir))
+            else if((game->map).move(&(game->players[packet.player_id]), dir))
             {
+                    if(game->map.isAtExit(game->players[packet.player_id].get_pos().x, game->players[packet.player_id].get_pos().y))
+                    {
+                            finished[packet.player_id] = 1;
+                            num_finished++; 
+                            if(num_finished == NUM_PLAYERS)
+                            {
+                                    server_game_running = false;
+                                    game_won = true;
+                            }
+                    }
                     cout<<"Move valid. Broadcasting...\n";
                     pthread_mutex_lock(&gameLock);
                     for(int i = 0; i < NUM_PLAYERS ; i++)
@@ -381,10 +395,12 @@ void game_init()
 {
     srand(time(0)); 
     game.map = Map(35, 35); 
+    game.map.place_exit(); 
     game.num_players = NUM_PLAYERS; 
     game.time = GAME_DURATION;
     game.running = true; 
     server_game_running = true;
+    num_finished = 0; 
 }
 
 void create_threads()

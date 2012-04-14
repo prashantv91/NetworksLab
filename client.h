@@ -23,13 +23,11 @@
 #include "chat.h"
 
 
-Params client_init();
 void recv_map();
 void recv_players();
 
 void* game_fn(void *args);
 void* keyboard_fn(void *args);
-int main();
 
 #endif
 

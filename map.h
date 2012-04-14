@@ -21,9 +21,6 @@ class Map
     char map_original[MAP_MAXX][MAP_MAXY];           
     char map[MAP_MAXX][MAP_MAXY];           
 
-    bool safe(Position pos);
-    bool check_map(char m[MAP_MAXX][MAP_MAXY]);
-
     int iter; 
     std::vector<std::vector<std::pair<int, int> > >shapes; 
     int h, w; 
@@ -39,6 +36,10 @@ class Map
 
     bool check(int, int); 
     bool move(Player* player, direction dir);
+    bool safe(Position pos);
+    bool isAtExit(int, int); 
+    bool check_map(char m[MAP_MAXX][MAP_MAXY]);
+
     int fill_map(); 
     void init_shapes();
     void print_map();
@@ -46,6 +47,7 @@ class Map
     void draw_map(Mask *, int, int);
     void place_player(Player* pl, Position pos);
     void place_player_random(Player* pl);
+    void place_exit(); 
 
 };
 #endif

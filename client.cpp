@@ -347,16 +347,13 @@ for (int i = 0; i < game.num_players; i++)
         recv_packet(sockfd, &packet);
     } while (packet.packet_type != TYPE_START);
     
-
-    mask[myId].update(game.players[myId].get_pos().x, game.players[myId].get_pos().y); 
-    game.map.draw_map(&mask[myId], game.players[myId].get_pos().x, game.players[myId].get_pos().y);
-
     //pthread_mutex_lock(&lock);
     game_running = true;
     //pthread_mutex_lock(&lock);
 
     game_won = false;
-    game.map.draw_map();
+    mask[myId].update(game.players[myId].get_pos().x, game.players[myId].get_pos().y); 
+    game.map.draw_map(&mask[myId], game.players[myId].get_pos().x, game.players[myId].get_pos().y);
 
     while (recv_packet(sockfd, &packet))
     {
